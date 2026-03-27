@@ -96,6 +96,8 @@ ALLOWED_UPLOAD_EXTS = os.environ.get(
 # Sesión
 SESSION_COOKIE_AGE = 60 * 60 * 8   # 8 horas
 SESSION_SAVE_EVERY_REQUEST = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 ALLOWED_EMAIL_DOMAIN = os.environ.get("ALLOWED_EMAIL_DOMAIN", "cecar.edu.co")
 # Correos que pueden entrar al panel de Coordinación (coma-separados)
 COORDINATOR_EMAILS = [e.strip().lower() for e in os.environ.get(
