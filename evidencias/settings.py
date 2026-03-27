@@ -105,6 +105,7 @@ COORDINATOR_EMAILS = [e.strip().lower() for e in os.environ.get(
     "COORDINATOR_EMAILS",
     "coordareaingenieriasistemas@cecar.edu.co"
 ).split(",")]
+SESSION_ENGINE = "django.contrib.sessions.backends.db"
 # === Google Drive ===
 USE_DRIVE = True
 # === Google Drive (OAuth de usuario) ===
