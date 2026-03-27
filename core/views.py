@@ -95,6 +95,7 @@ def drive_auth(request):
         include_granted_scopes="true",
         prompt="consent",
     )
+    print("URL COMPLETA GOOGLE:", auth_url)
     request.session["drive_oauth_state"] = state
     return redirect(auth_url)
 
