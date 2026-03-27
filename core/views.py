@@ -81,7 +81,7 @@ def drive_auth(request):
     flow = Flow.from_client_secrets_file(
         str(settings.GOOGLE_OAUTH_CLIENT_SECRETS_FILE),
         scopes=settings.DRIVE_SCOPES,
-        redirect_uri=request.build_absolute_uri("/drive/callback"),
+        redirect_uri="https://sistema-evidencias3.onrender.com/drive/callback",
     )
     auth_url, state = flow.authorization_url(
         access_type="offline",
@@ -96,7 +96,7 @@ def drive_callback(request):
     flow = Flow.from_client_secrets_file(
         str(settings.GOOGLE_OAUTH_CLIENT_SECRETS_FILE),
         scopes=settings.DRIVE_SCOPES,
-        redirect_uri=request.build_absolute_uri("/drive/callback"),
+        redirect_uri="https://sistema-evidencias3.onrender.com/drive/callback",
         state=state,
     )
     flow.fetch_token(authorization_response=request.build_absolute_uri())
