@@ -11,7 +11,7 @@ SECRET_KEY = os.environ.get("DJ_SECRET", "dev-secret")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG","0") == "1"
 
-ALLOWED_HOSTS = ["sistema-evidencias2.onrender.com", "127.0.0.1", "localhost"]
+ALLOWED_HOSTS = ["sistema-evidencias2.onrender.com", "127.0.0.1", "localhost", "sistema-evidencias3.onrender.com"]
 
 
 # Application definition
