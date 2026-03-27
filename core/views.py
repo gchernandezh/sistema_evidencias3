@@ -78,6 +78,13 @@ def drive_auth(request):
     if not _require_coordinator(request):
         return HttpResponseForbidden("Solo coordinadores.")
 
+    import os
+    
+    print("EXISTE:", os.path.exists("/tmp/client_secret.json"))
+    
+    if os.path.exists("/tmp/client_secret.json"):
+        with open("/tmp/client_secret.json") as f:
+            print("CONTENIDO:", f.read()[:200])
     flow = Flow.from_client_secrets_file(
         str(settings.GOOGLE_OAUTH_CLIENT_SECRETS_FILE),
         scopes=settings.DRIVE_SCOPES,
