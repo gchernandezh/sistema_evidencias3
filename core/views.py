@@ -75,8 +75,8 @@ def login_google_only(request):
 
 
 def drive_auth(request):
-    if not _require_coordinator(request):
-        return HttpResponseForbidden("Solo coordinadores.")
+    #if not _require_coordinator(request):
+        #return HttpResponseForbidden("Solo coordinadores.")
 
     import os
     
