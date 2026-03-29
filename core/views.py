@@ -75,42 +75,54 @@ def login_google_only(request):
 
 
 def drive_auth(request):
-    #if not _require_coordinator(request):
-        #return HttpResponseForbidden("Solo coordinadores.")
+    # if not _require_coordinator(request):
+    #     return HttpResponseForbidden("Solo coordinadores.")
 
     import os
-    
+
     print("EXISTE:", os.path.exists("/tmp/client_secret.json"))
-    
+
     if os.path.exists("/tmp/client_secret.json"):
         with open("/tmp/client_secret.json") as f:
             print("CONTENIDO:", f.read()[:200])
+
     flow = Flow.from_client_secrets_file(
-    str(settings.GOOGLE_OAUTH_CLIENT_SECRETS_FILE),
-    scopes=settings.DRIVE_SCOPES,
-    redirect_uri="https://sistema-evidencias3.onrender.com/drive/callback",
+        str(settings.GOOGLE_OAUTH_CLIENT_SECRETS_FILE),
+        scopes=settings.DRIVE_SCOPES,
+        redirect_uri="https://sistema-evidencias3.onrender.com/drive/callback",
     )
 
-    flow.oauth2session.__dict__.update(request.session["flow"])
+    # 🚨 ELIMINAMOS ESTO (ERA EL ERROR)
+    # flow.oauth2session.__dict__.update(request.session["flow"])
+
     auth_url, state = flow.authorization_url(
         access_type="offline",
         include_granted_scopes="true",
         prompt="consent",
     )
-    request.session["flow"] = flow.oauth2session.__dict__
+
     print("URL COMPLETA GOOGLE:", auth_url)
+
+    # ✅ SOLO GUARDAMOS EL STATE
     request.session["drive_oauth_state"] = state
+
     return redirect(auth_url)
 
 def drive_callback(request):
     state = request.session.get("drive_oauth_state")
+
     flow = Flow.from_client_secrets_file(
         str(settings.GOOGLE_OAUTH_CLIENT_SECRETS_FILE),
         scopes=settings.DRIVE_SCOPES,
         redirect_uri="https://sistema-evidencias3.onrender.com/drive/callback",
         state=state,
     )
-    flow.fetch_token(authorization_response=request.build_absolute_uri())
+
+    flow.fetch_token(
+        authorization_response=request.build_absolute_uri(),
+        code_verifier=flow.code_verifier
+    )
+
     creds = flow.credentials
 
     # guarda en BD (opcional: quién autorizó)
