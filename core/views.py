@@ -100,6 +100,8 @@ def drive_auth(request):
         include_granted_scopes="true",
         prompt="consent",
     )
+    request.session["drive_oauth_state"] = state
+    request.session["code_verifier"] = flow.code_verifier
 
     print("URL COMPLETA GOOGLE:", auth_url)
 
@@ -110,7 +112,7 @@ def drive_auth(request):
 
 def drive_callback(request):
     state = request.session.get("drive_oauth_state")
-
+    code_verifier = request.session.get("code_verifier")
     flow = Flow.from_client_secrets_file(
         str(settings.GOOGLE_OAUTH_CLIENT_SECRETS_FILE),
         scopes=settings.DRIVE_SCOPES,
@@ -119,8 +121,8 @@ def drive_callback(request):
     )
 
     flow.fetch_token(
-        authorization_response=request.build_absolute_uri(),
-        code_verifier=flow.code_verifier
+    authorization_response=request.build_absolute_uri(),
+    code_verifier=code_verifier
     )
 
     creds = flow.credentials
