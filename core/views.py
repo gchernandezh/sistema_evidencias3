@@ -86,15 +86,18 @@ def drive_auth(request):
         with open("/tmp/client_secret.json") as f:
             print("CONTENIDO:", f.read()[:200])
     flow = Flow.from_client_secrets_file(
-        str(settings.GOOGLE_OAUTH_CLIENT_SECRETS_FILE),
-        scopes=settings.DRIVE_SCOPES,
-        redirect_uri="https://sistema-evidencias3.onrender.com/drive/callback",
+    str(settings.GOOGLE_OAUTH_CLIENT_SECRETS_FILE),
+    scopes=settings.DRIVE_SCOPES,
+    redirect_uri="https://sistema-evidencias3.onrender.com/drive/callback",
     )
+
+    flow.oauth2session.__dict__.update(request.session["flow"])
     auth_url, state = flow.authorization_url(
         access_type="offline",
         include_granted_scopes="true",
         prompt="consent",
     )
+    request.session["flow"] = flow.oauth2session.__dict__
     print("URL COMPLETA GOOGLE:", auth_url)
     request.session["drive_oauth_state"] = state
     return redirect(auth_url)
