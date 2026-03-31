@@ -1192,3 +1192,73 @@ def get_service_file():
         raise FileNotFoundError("No hay token.json (autoriza primero).")
     creds = Credentials.from_authorized_user_info(json.loads(token_path.read_text()))
     return build("drive", "v3", credentials=creds, cache_discovery=False)
+
+
+from django.shortcuts import render, redirect
+from django.db import connection, transaction
+from django.contrib import messages
+
+def visualizacion_correcciones(request):
+    if not request.user.is_authenticated:
+        return redirect("login")
+
+    docente_email = (getattr(request.user, "email", "") or "").lower()
+
+    # 🔎 Obtener entregas del docente
+    with connection.cursor() as cur:
+        cur.execute("""
+            SELECT e.id, c.nombre AS curso, t.nombre AS tipo, e.file_url, e.curso_id, e.tipo_id
+            FROM entregas e
+            JOIN cursos c ON e.curso_id = c.id
+            JOIN tipos_entrega t ON e.tipo_id = t.id
+            WHERE LOWER(e.docente_email) = %s
+            ORDER BY e.updated_at DESC
+        """, [docente_email])
+
+        columnas = [col[0] for col in cur.description]
+        entregas = [dict(zip(columnas, fila)) for fila in cur.fetchall()]
+
+    # 🔄 REEMPLAZO
+    if request.method == "POST":
+        entrega_id = request.POST.get("entrega_id")
+        archivo = request.FILES.get("archivo")
+
+        if not archivo:
+            messages.error(request, "Debes seleccionar un archivo.")
+            return redirect("visualizacion_correcciones")
+
+        # 🔥 Subir nuevo archivo a Drive (usa tu función existente)
+        file_url, file_id = upload_file_to_drive(archivo)
+
+        with connection.cursor() as cur, transaction.atomic():
+
+            # obtener archivo anterior
+            cur.execute("""
+                SELECT drive_file_id
+                FROM entregas
+                WHERE id = %s
+            """, [entrega_id])
+
+            row = cur.fetchone()
+            old_drive_id = row[0] if row else None
+
+            # 🔥 borrar anterior
+            if old_drive_id:
+                delete_file(old_drive_id)
+
+            # 🔄 actualizar
+            cur.execute("""
+                UPDATE entregas
+                SET file_url = %s,
+                    drive_file_id = %s,
+                    estado = 'EN_REVISION',
+                    updated_at = NOW()
+                WHERE id = %s
+            """, [file_url, file_id, entrega_id])
+
+        messages.success(request, "Archivo reemplazado correctamente.")
+        return redirect("visualizacion_correcciones")
+
+    return render(request, "visualizacion_correcciones.html", {
+        "entregas": entregas
+    })
