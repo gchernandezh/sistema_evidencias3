@@ -1194,31 +1194,48 @@ def get_service_file():
     return build("drive", "v3", credentials=creds, cache_discovery=False)
 
 
-from django.shortcuts import render, redirect
-from django.db import connection, transaction
-from django.contrib import messages
-
 def visualizacion_correcciones(request):
     if not request.user.is_authenticated:
         return redirect("login")
 
     docente_email = (getattr(request.user, "email", "") or "").lower()
 
-    # 🔎 Obtener entregas del docente
+    # 🔎 1. Obtener ID del docente
     with connection.cursor() as cur:
         cur.execute("""
-            SELECT e.id, c.nombre AS curso, t.nombre AS tipo, e.file_url, e.curso_id, e.tipo_id
+            SELECT id
+            FROM docentes
+            WHERE LOWER(email) = %s
+        """, [docente_email])
+
+        row = cur.fetchone()
+        docente_id = row[0] if row else None
+
+    if not docente_id:
+        messages.error(request, "No se encontró el docente en el sistema.")
+        return redirect("dashboard")
+
+    # 🔎 2. Obtener entregas del docente
+    with connection.cursor() as cur:
+        cur.execute("""
+            SELECT e.id,
+                   c.nombre AS curso,
+                   t.nombre AS tipo,
+                   e.file_url,
+                   e.curso_id,
+                   e.tipo_id,
+                   e.drive_file_id
             FROM entregas e
             JOIN cursos c ON e.curso_id = c.id
             JOIN tipos_entregable t ON e.tipo_id = t.id
-            WHERE LOWER(e.docente_email) = %s
+            WHERE e.docente_id = %s
             ORDER BY e.updated_at DESC
-        """, [docente_email])
+        """, [docente_id])
 
         columnas = [col[0] for col in cur.description]
         entregas = [dict(zip(columnas, fila)) for fila in cur.fetchall()]
 
-    # 🔄 REEMPLAZO
+    # 🔄 3. REEMPLAZO DE ARCHIVO
     if request.method == "POST":
         entrega_id = request.POST.get("entrega_id")
         archivo = request.FILES.get("archivo")
@@ -1227,34 +1244,37 @@ def visualizacion_correcciones(request):
             messages.error(request, "Debes seleccionar un archivo.")
             return redirect("visualizacion_correcciones")
 
-        # 🔥 Subir nuevo archivo a Drive (usa tu función existente)
+        # 🔥 Subir nuevo archivo a Drive
         file_url, file_id = upload_file_to_drive(archivo)
 
         with connection.cursor() as cur, transaction.atomic():
 
-            # obtener archivo anterior
+            # 🔎 obtener archivo anterior
             cur.execute("""
                 SELECT drive_file_id
                 FROM entregas
-                WHERE id = %s
-            """, [entrega_id])
+                WHERE id = %s AND docente_id = %s
+            """, [entrega_id, docente_id])
 
             row = cur.fetchone()
             old_drive_id = row[0] if row else None
 
-            # 🔥 borrar anterior
+            # 🔥 borrar archivo anterior en Drive
             if old_drive_id:
-                delete_file(old_drive_id)
+                try:
+                    delete_file(old_drive_id)
+                except Exception:
+                    pass  # evita que falle si no existe
 
-            # 🔄 actualizar
+            # 🔄 actualizar registro
             cur.execute("""
                 UPDATE entregas
                 SET file_url = %s,
                     drive_file_id = %s,
                     estado = 'EN_REVISION',
                     updated_at = NOW()
-                WHERE id = %s
-            """, [file_url, file_id, entrega_id])
+                WHERE id = %s AND docente_id = %s
+            """, [file_url, file_id, entrega_id, docente_id])
 
         messages.success(request, "Archivo reemplazado correctamente.")
         return redirect("visualizacion_correcciones")
