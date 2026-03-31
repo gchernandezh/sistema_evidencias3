@@ -28,6 +28,7 @@ urlpatterns = [
     path("drive/status", views.drive_status, name="drive_status"),
     path("entregar", views.subir_entrega, name="subir_entrega"),
     path("entregar/", views.subir_entrega),  # compatibilidad si alguien pone la barra
+    path("docente/correcciones/", views.visualizacion_correcciones, name="visualizacion_correcciones"),
 ]
 # Solo en desarrollo: servir /static/ y /media/
 if settings.DEBUG:
