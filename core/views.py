@@ -1210,7 +1210,7 @@ def visualizacion_correcciones(request):
             SELECT e.id, c.nombre AS curso, t.nombre AS tipo, e.file_url, e.curso_id, e.tipo_id
             FROM entregas e
             JOIN cursos c ON e.curso_id = c.id
-            JOIN tipos_entrega t ON e.tipo_id = t.id
+            JOIN tipos_entregable t ON e.tipo_id = t.id
             WHERE LOWER(e.docente_email) = %s
             ORDER BY e.updated_at DESC
         """, [docente_email])
