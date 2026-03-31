@@ -1244,27 +1244,51 @@ def visualizacion_correcciones(request):
             messages.error(request, "Debes seleccionar un archivo.")
             return redirect("visualizacion_correcciones")
 
-        # 🔥 Subir nuevo archivo a Drive
-        file_url, file_id = upload_file_to_drive(archivo)
-
-        with connection.cursor() as cur, transaction.atomic():
-
-            # 🔎 obtener archivo anterior
+        with connection.cursor() as cur:
+            # 🔎 obtener curso_id y archivo anterior
             cur.execute("""
-                SELECT drive_file_id
+                SELECT curso_id, drive_file_id
                 FROM entregas
                 WHERE id = %s AND docente_id = %s
             """, [entrega_id, docente_id])
 
             row = cur.fetchone()
-            old_drive_id = row[0] if row else None
 
-            # 🔥 borrar archivo anterior en Drive
+        if not row:
+            messages.error(request, "Entrega no válida.")
+            return redirect("visualizacion_correcciones")
+
+        curso_id, old_drive_id = row
+
+        # 🔎 obtener carpeta del curso
+        with connection.cursor() as cur:
+            cur.execute("""
+                SELECT folder_drive_id
+                FROM cursos
+                WHERE id = %s
+            """, [curso_id])
+
+            r = cur.fetchone()
+
+        if not r or not r[0]:
+            messages.error(request, "El curso no tiene carpeta en Drive.")
+            return redirect("visualizacion_correcciones")
+
+        curso_folder_id = r[0]
+
+        # 🔥 SUBIR ARCHIVO (USANDO TU FUNCIÓN REAL)
+        created = upload_file(curso_folder_id, archivo, archivo.name)
+        file_id = created.get("id")
+        file_url = f"https://drive.google.com/file/d/{file_id}/view"
+
+        with connection.cursor() as cur, transaction.atomic():
+
+            # 🧹 borrar archivo anterior
             if old_drive_id:
                 try:
                     delete_file(old_drive_id)
                 except Exception:
-                    pass  # evita que falle si no existe
+                    pass
 
             # 🔄 actualizar registro
             cur.execute("""
