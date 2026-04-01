@@ -34,6 +34,7 @@ from core.drive_oauth import save_creds
 logger = logging.getLogger(__name__)
 # en core/views.py
 from core.drive_oauth import get_service, ensure_child_folder, upload_file, delete_file
+from django.http import JsonResponse
 
 
 TOKEN_MAX_AGE = 15 * 60  # 15 mins
@@ -1324,4 +1325,82 @@ def visualizacion_correcciones(request):
 
     return render(request, "visualizacion_correcciones.html", {
         "entregas": entregas
+    })
+
+def reemplazar_entrega(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "Método no permitido"}, status=400)
+
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "No autenticado"}, status=403)
+
+    docente_email = request.user.email.lower()
+
+    # 🔎 obtener docente_id
+    with connection.cursor() as cur:
+        cur.execute("SELECT id FROM docentes WHERE LOWER(email)=%s", [docente_email])
+        row = cur.fetchone()
+
+    if not row:
+        return JsonResponse({"error": "Docente no encontrado"}, status=404)
+
+    docente_id = row[0]
+
+    entrega_id = request.POST.get("entrega_id")
+    archivo = request.FILES.get("archivo")
+
+    if not archivo:
+        return JsonResponse({"error": "Archivo requerido"}, status=400)
+
+    # 🔎 obtener datos de entrega
+    with connection.cursor() as cur:
+        cur.execute("""
+            SELECT curso_id, drive_file_id
+            FROM entregas
+            WHERE id=%s AND docente_id=%s
+        """, [entrega_id, docente_id])
+
+        row = cur.fetchone()
+
+    if not row:
+        return JsonResponse({"error": "Entrega no válida"}, status=404)
+
+    curso_id, old_drive_id = row
+
+    # 🔎 carpeta de Drive
+    with connection.cursor() as cur:
+        cur.execute("SELECT folder_drive_id FROM cursos WHERE id=%s", [curso_id])
+        r = cur.fetchone()
+
+    if not r or not r[0]:
+        return JsonResponse({"error": "Curso sin carpeta en Drive"}, status=400)
+
+    folder_id = r[0]
+
+    # 🔥 subir archivo nuevo
+    created = upload_file(folder_id, archivo, archivo.name)
+    file_id = created.get("id")
+    file_url = f"https://drive.google.com/file/d/{file_id}/view"
+
+    # 🧹 borrar archivo anterior
+    if old_drive_id:
+        try:
+            delete_file(old_drive_id)
+        except:
+            pass
+
+    # 🔄 actualizar BD
+    with connection.cursor() as cur:
+        cur.execute("""
+            UPDATE entregas
+            SET file_url=%s,
+                drive_file_id=%s,
+                estado='EN_REVISION',
+                updated_at=NOW()
+            WHERE id=%s
+        """, [file_url, file_id, entrega_id])
+
+    return JsonResponse({
+        "success": True,
+        "file_url": file_url
     })
