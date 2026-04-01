@@ -368,6 +368,7 @@ def docente_dashboard(request):
         "grupos_regulares": agrupar_por_tipo(requeridas),
         "grupos_opcionales": agrupar_por_tipo(opcionales),
         "docente_email": docente_email,
+        "entregas": entregas   # 👈 ESTA LÍNEA NUEVA
     }
 
     # === Historial / Estado de mis entregas (semestre actual) ===
@@ -424,6 +425,23 @@ def docente_dashboard(request):
 
     # después de armar 'historial' y justo antes del return
     context["historial"] = historial
+    # 🔎 OBTENER ENTREGAS PARA CORRECCIONES
+    with connection.cursor() as cur:
+        cur.execute("""
+            SELECT e.id,
+                   c.nombre AS curso,
+                   t.nombre AS tipo,
+                   e.file_url,
+                   e.drive_file_id
+            FROM entregas e
+            JOIN cursos c ON e.curso_id = c.id
+            JOIN tipos_entregable t ON e.tipo_id = t.id
+            WHERE e.docente_id = %s
+            ORDER BY e.updated_at DESC
+        """, [docente_id])
+    
+        columnas = [col[0] for col in cur.description]
+        entregas = [dict(zip(columnas, fila)) for fila in cur.fetchall()]
     return render(request, "dashboard.html", context)
 
 
