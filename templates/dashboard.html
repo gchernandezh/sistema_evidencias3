@@ -411,7 +411,7 @@
                         {% csrf_token %}
                         <input type="hidden" name="entrega_id" value="{{ e.id }}">
                         <input type="file" name="archivo" required class="form-control form-control-sm mb-2">
-                        <button class="btn btn-primary btn-sm">🔄 Reemplazar</button>
+                        <button type="button" class="btn btn-primary btn-sm btn-reemplazar">🔄 Reemplazar</button>
                     </form>
                 </td>
             </tr>
