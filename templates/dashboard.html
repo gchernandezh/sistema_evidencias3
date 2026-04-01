@@ -466,6 +466,75 @@
     });
   });
 </script>
+<script>
+document.querySelectorAll(".btn-reemplazar").forEach(btn => {
 
+    btn.addEventListener("click", async function() {
+
+        const form = this.closest("form");
+        const inputFile = form.querySelector('input[type="file"]');
+        const entregaId = form.querySelector('input[name="entrega_id"]').value;
+
+        if (!inputFile.files.length) {
+            alert("Selecciona un archivo");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("archivo", inputFile.files[0]);
+        formData.append("entrega_id", entregaId);
+
+        // 🔥 feedback visual
+        this.innerText = "⏳ Subiendo...";
+        this.disabled = true;
+
+        try {
+            const response = await fetch("/docente/reemplazar/", {
+                method: "POST",
+                body: formData,
+                headers: {
+                    "X-CSRFToken": getCookie("csrftoken")
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.innerText = "✅ Listo";
+                this.classList.remove("btn-primary");
+                this.classList.add("btn-success");
+
+                // 🔥 actualizar link
+                const link = form.closest("tr").querySelector("a");
+                link.href = data.file_url;
+
+            } else {
+                throw new Error(data.error);
+            }
+
+        } catch (err) {
+            alert("Error al subir archivo");
+            this.innerText = "🔄 Reintentar";
+            this.disabled = false;
+        }
+
+    });
+
+});
+
+// 🔐 CSRF helper
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie) {
+        document.cookie.split(';').forEach(cookie => {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            }
+        });
+    }
+    return cookieValue;
+}
+</script>
 </body>
 </html>
