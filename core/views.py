@@ -432,6 +432,9 @@ def docente_dashboard(request):
     
         columnas = [col[0] for col in cur.description]
         entregas = [dict(zip(columnas, fila)) for fila in cur.fetchall()]
+                # 🔥 LISTAS SIN DUPLICADOS
+        cursos_unicos = sorted(set([e["curso"] for e in entregas]))
+        tipos_unicos = sorted(set([e["tipo"] for e in entregas]))
 
     print("ENTREGAS:", entregas)
     
@@ -441,7 +444,9 @@ def docente_dashboard(request):
         "grupos_opcionales": agrupar_por_tipo(opcionales),
         "docente_email": docente_email,
         "historial": historial,
-        "entregas": entregas
+        "entregas": entregas,
+        "cursos_unicos": cursos_unicos,
+        "tipos_unicos": tipos_unicos,
     }
     
     return render(request, "dashboard.html", context)
