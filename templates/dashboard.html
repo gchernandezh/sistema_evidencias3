@@ -387,18 +387,18 @@
       <div class="col-md-4">
         <select id="filtro-curso" class="form-select">
           <option value="">Todos los cursos</option>
-          {% for e in entregas %}
-            <option value="{{ e.curso }}">{{ e.curso }}</option>
-          {% endfor %}
+        {% for c in cursos_unicos %}
+          <option value="{{ c }}">{{ c }}</option>
+        {% endfor %}
         </select>
       </div>
     
       <div class="col-md-4">
         <select id="filtro-tipo" class="form-select">
           <option value="">Todos los tipos</option>
-          {% for e in entregas %}
-            <option value="{{ e.tipo }}">{{ e.tipo }}</option>
-          {% endfor %}
+        {% for t in tipos_unicos %}
+          <option value="{{ t }}">{{ t }}</option>
+        {% endfor %}
         </select>
       </div>
     
