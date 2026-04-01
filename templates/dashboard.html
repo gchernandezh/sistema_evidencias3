@@ -382,7 +382,29 @@
 
     <h5 class="mt-3 mb-3 fw-semibold">📂 Visualización y correcciones</h5>
 
-    <table class="table table-hover mt-3 text-center align-middle">
+    <div class="row mb-3">
+    
+      <div class="col-md-4">
+        <select id="filtro-curso" class="form-select">
+          <option value="">Todos los cursos</option>
+          {% for e in entregas %}
+            <option value="{{ e.curso }}">{{ e.curso }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    
+      <div class="col-md-4">
+        <select id="filtro-tipo" class="form-select">
+          <option value="">Todos los tipos</option>
+          {% for e in entregas %}
+            <option value="{{ e.tipo }}">{{ e.tipo }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    
+    </div>
+      
+    <table id="tabla-correcciones" class="table table-hover mt-3 text-center align-middle">
         <thead style="background-color: white; border-bottom: 2px solid #dee2e6;">
             <tr>
               <th class="text-center">Curso</th>
@@ -534,6 +556,37 @@ function getCookie(name) {
         });
     }
     return cookieValue;
+}
+</script>
+
+<script>
+const filtroCurso = document.getElementById("filtro-curso");
+const filtroTipo = document.getElementById("filtro-tipo");
+
+[filtroCurso, filtroTipo].forEach(filtro => {
+    filtro.addEventListener("change", aplicarFiltros);
+});
+
+function aplicarFiltros() {
+
+    const curso = filtroCurso.value.toLowerCase();
+    const tipo = filtroTipo.value.toLowerCase();
+
+    const filas = document.querySelectorAll("#tabla-correcciones tbody tr");
+
+    filas.forEach(fila => {
+        const cursoFila = fila.children[0].innerText.toLowerCase();
+        const tipoFila = fila.children[1].innerText.toLowerCase();
+
+        const matchCurso = !curso || cursoFila.includes(curso);
+        const matchTipo = !tipo || tipoFila.includes(tipo);
+
+        if (matchCurso && matchTipo) {
+            fila.style.display = "";
+        } else {
+            fila.style.display = "none";
+        }
+    });
 }
 </script>
 </body>
