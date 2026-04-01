@@ -529,6 +529,13 @@ document.querySelectorAll(".btn-reemplazar").forEach(btn => {
                 // 🔥 actualizar link
                 const link = form.closest("tr").querySelector("a");
                 link.href = data.file_url;
+                  // 🔥 REACTIVAR BOTÓN (CLAVE)
+                setTimeout(() => {
+                    this.innerText = "🔄 Reemplazar";
+                    this.disabled = false;
+                    this.classList.remove("btn-success");
+                    this.classList.add("btn-primary");
+                }, 1500);
 
             } else {
                 throw new Error(data.error);
