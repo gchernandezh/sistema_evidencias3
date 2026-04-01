@@ -364,13 +364,6 @@ def docente_dashboard(request):
             grupos.append({"tipo": tipo, "items": list(group)})
         return grupos
 
-    context = {
-        "grupos_regulares": agrupar_por_tipo(requeridas),
-        "grupos_opcionales": agrupar_por_tipo(opcionales),
-        "docente_email": docente_email,
-        "entregas": entregas   # 👈 ESTA LÍNEA NUEVA
-    }
-
     # === Historial / Estado de mis entregas (semestre actual) ===
     historial = []
     with connection.cursor() as cur:
@@ -402,7 +395,7 @@ def docente_dashboard(request):
             LIMIT 200
         """, [docente_id])
         rows = cur.fetchall()
-
+    
     for (eid, created_at, estado, comentario, curso_id, codigo, grupo, curso_nombre,
         tipo_id, tipo_codigo, tipo_nombre, est_id, est_nombre) in rows:
         historial.append({
@@ -420,12 +413,8 @@ def docente_dashboard(request):
             "estudiante_id": est_id,
             "estudiante_nombre": est_nombre,
         })
-
-
-
-    # después de armar 'historial' y justo antes del return
-    context["historial"] = historial
-    # 🔎 OBTENER ENTREGAS PARA CORRECCIONES
+    
+    # 🔥 NUEVO: ENTREGAS PARA CORRECCIONES (MOVER AQUÍ)
     with connection.cursor() as cur:
         cur.execute("""
             SELECT e.id,
@@ -442,6 +431,16 @@ def docente_dashboard(request):
     
         columnas = [col[0] for col in cur.description]
         entregas = [dict(zip(columnas, fila)) for fila in cur.fetchall()]
+    
+    # 🔥 AHORA SÍ EL CONTEXT (SIN ERROR)
+    context = {
+        "grupos_regulares": agrupar_por_tipo(requeridas),
+        "grupos_opcionales": agrupar_por_tipo(opcionales),
+        "docente_email": docente_email,
+        "historial": historial,
+        "entregas": entregas
+    }
+    
     return render(request, "dashboard.html", context)
 
 
