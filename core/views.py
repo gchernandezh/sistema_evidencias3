@@ -431,6 +431,8 @@ def docente_dashboard(request):
     
         columnas = [col[0] for col in cur.description]
         entregas = [dict(zip(columnas, fila)) for fila in cur.fetchall()]
+
+    print("ENTREGAS:", entregas)
     
     # 🔥 AHORA SÍ EL CONTEXT (SIN ERROR)
     context = {
