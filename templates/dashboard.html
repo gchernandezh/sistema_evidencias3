@@ -407,7 +407,7 @@
                 </td>
 
                 <td class="text-center align-middle">
-                    <form method="POST" enctype="multipart/form-data" class="d-flex flex-column align-items-center gap-2">
+                    <form class="form-reemplazo d-flex flex-column align-items-center gap-2">
                         {% csrf_token %}
                         <input type="hidden" name="entrega_id" value="{{ e.id }}">
                         <input type="file" name="archivo" required class="form-control form-control-sm mb-2">
