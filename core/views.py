@@ -1500,3 +1500,24 @@ def coord_revision_data():
 
         columnas = [col[0] for col in cur.description]
         return [dict(zip(columnas, fila)) for fila in cur.fetchall()]
+    
+@require_POST
+def cambiar_estado_entrega(request):
+    if not _require_coordinator(request):
+        return HttpResponseForbidden("No autorizado")
+
+    entrega_id = request.POST.get("entrega_id")
+    estado = request.POST.get("estado")
+
+    if estado not in ["EN_REVISION", "REVISADO", "APROBADO"]:
+        return JsonResponse({"error": "Estado inválido"}, status=400)
+
+    with connection.cursor() as cur:
+        cur.execute("""
+            UPDATE entregas
+            SET estado = %s,
+                updated_at = NOW()
+            WHERE id = %s
+        """, [estado, entrega_id])
+
+    return JsonResponse({"success": True})
