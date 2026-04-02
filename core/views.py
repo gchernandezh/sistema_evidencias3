@@ -1417,28 +1417,41 @@ def reemplazar_entrega(request):
 def coord_reportes_data():
     with connection.cursor() as cur:
         cur.execute("""
-            WITH req AS (
-                SELECT curso_id, tipo_id
+            WITH requeridas AS (
+                SELECT 
+                    curso_id,
+                    tipo_id
                 FROM vw_entregas_requeridas_efectivas
             ),
-            ent AS (
-                SELECT DISTINCT curso_id, tipo_id, docente_id
+            entregadas AS (
+                SELECT DISTINCT
+                    curso_id,
+                    tipo_id,
+                    docente_id
                 FROM entregas
             ),
             base AS (
                 SELECT 
-                    d.id AS docente_id,
-                    d.nombre,
-                    COUNT(DISTINCT req.curso_id || '-' || req.tipo_id) AS requeridas,
-                    COUNT(DISTINCT ent.curso_id || '-' || ent.tipo_id) AS entregadas
-                FROM docentes d
-                LEFT JOIN ent ON ent.docente_id = d.id
-                LEFT JOIN req ON req.curso_id = ent.curso_id 
-                             AND req.tipo_id = ent.tipo_id
-                GROUP BY d.id, d.nombre
+                    a.docente_id,
+                    COUNT(DISTINCT r.curso_id || '-' || r.tipo_id) AS requeridas,
+                    COUNT(DISTINCT e.curso_id || '-' || e.tipo_id) AS entregadas
+                FROM asignaciones a
+                LEFT JOIN requeridas r 
+                    ON r.curso_id = a.curso_id
+                LEFT JOIN entregadas e 
+                    ON e.curso_id = r.curso_id 
+                    AND e.tipo_id = r.tipo_id
+                    AND e.docente_id = a.docente_id
+                GROUP BY a.docente_id
             )
-            SELECT * FROM base
-            ORDER BY nombre
+            SELECT 
+                d.nombre,
+                COALESCE(b.entregadas,0) AS entregadas,
+                COALESCE(b.requeridas,0) AS requeridas
+            FROM base b
+            JOIN docentes d ON d.id = b.docente_id
+            ORDER BY 
+                (COALESCE(b.entregadas,0) * 1.0 / NULLIF(b.requeridas,0)) DESC NULLS LAST
         """)
 
         columnas = [col[0] for col in cur.description]
