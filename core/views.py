@@ -717,7 +717,7 @@ def coord_panel(request):
         })
 
     # Diagnóstico visible (ayuda a confirmar que llegan filas)
-    messages.info(request, f"Enunciados encontrados: {len(enunciados)}")
+    # messages.info(request, f"Enunciados encontrados: {len(enunciados)}")
 
     # ------------------------------------------------------------
     # 4) (Compatibilidad) Si tu plantilla tiene otro bloque que usa "items",
@@ -764,7 +764,7 @@ def coord_panel(request):
             "fecha": fecha,
         })
 
-    ctx["cerradas"] = cerradas
+    # ctx["cerradas"] = cerradas
 
     # === Entregas ÚNICAS recientes (para Cerrar/Reabrir) ===
     with connection.cursor() as cur:
@@ -809,7 +809,7 @@ def coord_panel(request):
         })
 
     # añade al contexto
-    ctx["unicas"] = unicas
+    # ctx["unicas"] = unicas
     # 🔥 NUEVO: datos de reportes
     docentes_rep = coord_reportes_data()
 
@@ -1418,48 +1418,41 @@ def coord_reportes_data():
 
     with connection.cursor() as cur:
         cur.execute("""
-            WITH requeridas AS (
-                SELECT 
-                    curso_id,
-                    tipo_id
-                FROM vw_entregas_requeridas_efectivas
-            ),
-            entregadas AS (
-                SELECT DISTINCT
-                    curso_id,
-                    tipo_id,
-                    docente_id
-                FROM entregas
-            ),
-            resumen AS (
-                SELECT 
-                    a.docente_id,
-                    COUNT(DISTINCT r.tipo_id || '-' || r.curso_id) AS total_requeridas,
-                    COUNT(DISTINCT e.tipo_id || '-' || e.curso_id) AS total_entregadas
-                FROM asignaciones a
-                LEFT JOIN requeridas r ON r.curso_id = a.curso_id
-                LEFT JOIN entregadas e 
-                    ON e.curso_id = r.curso_id 
-                    AND e.tipo_id = r.tipo_id
-                    AND e.docente_id = a.docente_id
-                GROUP BY a.docente_id
-            )
             SELECT 
+                d.id,
                 d.nombre,
-                COALESCE(res.total_entregadas,0) AS total_entregadas,
-                COALESCE(res.total_requeridas - res.total_entregadas,0) AS pendientes,
-                ROUND(
-                    (res.total_entregadas * 100.0) / NULLIF(res.total_requeridas,0),2
-                ) AS porcentaje,
-                CASE 
-                    WHEN (res.total_entregadas * 100.0) / NULLIF(res.total_requeridas,0) >= 80 THEN 'VERDE'
-                    WHEN (res.total_entregadas * 100.0) / NULLIF(res.total_requeridas,0) >= 50 THEN 'AMARILLO'
-                    ELSE 'ROJO'
-                END AS semaforo
-            FROM resumen res
-            JOIN docentes d ON d.id = res.docente_id
-            ORDER BY porcentaje DESC NULLS LAST
+                COUNT(e.id) FILTER (WHERE e.estado IS NOT NULL) AS entregadas,
+                COUNT(r.tipo_id) AS requeridas
+            FROM docentes d
+            LEFT JOIN cursos c ON c.docente_id = d.id
+            LEFT JOIN vw_entregas_requeridas_efectivas r ON r.curso_id = c.id
+            LEFT JOIN entregas e 
+                ON e.curso_id = c.id 
+                AND e.tipo_id = r.tipo_id
+            GROUP BY d.id, d.nombre
+            ORDER BY d.nombre
         """)
 
         columnas = [col[0] for col in cur.description]
-        return [dict(zip(columnas, fila)) for fila in cur.fetchall()]
+        data = [dict(zip(columnas, fila)) for fila in cur.fetchall()]
+
+    # 🔥 cálculo en Python (más seguro)
+    for d in data:
+        req = d["requeridas"] or 0
+        ent = d["entregadas"] or 0
+
+        if req > 0:
+            porcentaje = round((ent * 100) / req, 2)
+        else:
+            porcentaje = 0
+
+        d["porcentaje"] = porcentaje
+
+        if porcentaje >= 80:
+            d["semaforo"] = "VERDE"
+        elif porcentaje >= 50:
+            d["semaforo"] = "AMARILLO"
+        else:
+            d["semaforo"] = "ROJO"
+
+    return data
