@@ -1415,28 +1415,36 @@ def reemplazar_entrega(request):
     })
 
 def coord_reportes_data():
-
     with connection.cursor() as cur:
         cur.execute("""
-            SELECT 
-                d.id,
-                d.nombre,
-                COUNT(e.id) FILTER (WHERE e.estado IS NOT NULL) AS entregadas,
-                COUNT(r.tipo_id) AS requeridas
-            FROM docentes d
-            LEFT JOIN cursos c ON c.docente_id = d.id
-            LEFT JOIN vw_entregas_requeridas_efectivas r ON r.curso_id = c.id
-            LEFT JOIN entregas e 
-                ON e.curso_id = c.id 
-                AND e.tipo_id = r.tipo_id
-            GROUP BY d.id, d.nombre
-            ORDER BY d.nombre
+            WITH req AS (
+                SELECT curso_id, tipo_id
+                FROM vw_entregas_requeridas_efectivas
+            ),
+            ent AS (
+                SELECT DISTINCT curso_id, tipo_id, docente_id
+                FROM entregas
+            ),
+            base AS (
+                SELECT 
+                    d.id AS docente_id,
+                    d.nombre,
+                    COUNT(DISTINCT req.curso_id || '-' || req.tipo_id) AS requeridas,
+                    COUNT(DISTINCT ent.curso_id || '-' || ent.tipo_id) AS entregadas
+                FROM docentes d
+                LEFT JOIN ent ON ent.docente_id = d.id
+                LEFT JOIN req ON req.curso_id = ent.curso_id 
+                             AND req.tipo_id = ent.tipo_id
+                GROUP BY d.id, d.nombre
+            )
+            SELECT * FROM base
+            ORDER BY nombre
         """)
 
         columnas = [col[0] for col in cur.description]
         data = [dict(zip(columnas, fila)) for fila in cur.fetchall()]
 
-    # 🔥 cálculo en Python (más seguro)
+    # 🔥 cálculo en Python (seguro)
     for d in data:
         req = d["requeridas"] or 0
         ent = d["entregadas"] or 0
