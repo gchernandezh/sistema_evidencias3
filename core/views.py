@@ -1418,24 +1418,47 @@ def coord_reportes_data():
 
     with connection.cursor() as cur:
         cur.execute("""
+            WITH requeridas AS (
+                SELECT 
+                    curso_id,
+                    tipo_id
+                FROM vw_entregas_requeridas_efectivas
+            ),
+            entregadas AS (
+                SELECT DISTINCT
+                    curso_id,
+                    tipo_id,
+                    docente_id
+                FROM entregas
+            ),
+            resumen AS (
+                SELECT 
+                    a.docente_id,
+                    COUNT(DISTINCT r.tipo_id || '-' || r.curso_id) AS total_requeridas,
+                    COUNT(DISTINCT e.tipo_id || '-' || e.curso_id) AS total_entregadas
+                FROM asignaciones a
+                LEFT JOIN requeridas r ON r.curso_id = a.curso_id
+                LEFT JOIN entregadas e 
+                    ON e.curso_id = r.curso_id 
+                    AND e.tipo_id = r.tipo_id
+                    AND e.docente_id = a.docente_id
+                GROUP BY a.docente_id
+            )
             SELECT 
                 d.nombre,
-                r.total_entregadas,
-                r.total_pendientes,
+                COALESCE(res.total_entregadas,0) AS total_entregadas,
+                COALESCE(res.total_requeridas - res.total_entregadas,0) AS pendientes,
                 ROUND(
-                    (r.total_entregadas * 100.0) / 
-                    NULLIF(r.total_entregadas + r.total_pendientes,0),2
+                    (res.total_entregadas * 100.0) / NULLIF(res.total_requeridas,0),2
                 ) AS porcentaje,
                 CASE 
-                    WHEN (r.total_entregadas * 100.0) / 
-                        NULLIF(r.total_entregadas + r.total_pendientes,0) >= 80 THEN 'VERDE'
-                    WHEN (r.total_entregadas * 100.0) / 
-                        NULLIF(r.total_entregadas + r.total_pendientes,0) >= 50 THEN 'AMARILLO'
+                    WHEN (res.total_entregadas * 100.0) / NULLIF(res.total_requeridas,0) >= 80 THEN 'VERDE'
+                    WHEN (res.total_entregadas * 100.0) / NULLIF(res.total_requeridas,0) >= 50 THEN 'AMARILLO'
                     ELSE 'ROJO'
                 END AS semaforo
-            FROM vw_resumen_docente r
-            JOIN docentes d ON d.id = r.docente_id
-            ORDER BY porcentaje DESC
+            FROM resumen res
+            JOIN docentes d ON d.id = res.docente_id
+            ORDER BY porcentaje DESC NULLS LAST
         """)
 
         columnas = [col[0] for col in cur.description]
