@@ -30,6 +30,7 @@ urlpatterns = [
     path("entregar/", views.subir_entrega),  # compatibilidad si alguien pone la barra
     path("docente/correcciones/", views.visualizacion_correcciones, name="visualizacion_correcciones"),
     path("docente/reemplazar/", views.reemplazar_entrega, name="reemplazar_entrega"),
+    path('coord/cambiar-estado/', views.cambiar_estado_entrega),
 ]
 # Solo en desarrollo: servir /static/ y /media/
 if settings.DEBUG:
