@@ -1420,14 +1420,17 @@ def coord_reportes_data():
         cur.execute("""
             SELECT 
                 d.nombre,
-                r.total_entregas,
+                r.total_entregadas,
                 r.total_pendientes,
                 ROUND(
-                    (r.total_entregas * 100.0) / NULLIF(r.total_entregas + r.total_pendientes,0),2
+                    (r.total_entregadas * 100.0) / 
+                    NULLIF(r.total_entregadas + r.total_pendientes,0),2
                 ) AS porcentaje,
                 CASE 
-                    WHEN (r.total_entregas * 100.0) / NULLIF(r.total_entregas + r.total_pendientes,0) >= 80 THEN 'VERDE'
-                    WHEN (r.total_entregas * 100.0) / NULLIF(r.total_entregas + r.total_pendientes,0) >= 50 THEN 'AMARILLO'
+                    WHEN (r.total_entregadas * 100.0) / 
+                        NULLIF(r.total_entregadas + r.total_pendientes,0) >= 80 THEN 'VERDE'
+                    WHEN (r.total_entregadas * 100.0) / 
+                        NULLIF(r.total_entregadas + r.total_pendientes,0) >= 50 THEN 'AMARILLO'
                     ELSE 'ROJO'
                 END AS semaforo
             FROM vw_resumen_docente r
