@@ -810,6 +810,10 @@ def coord_panel(request):
 
     # añade al contexto
     ctx["unicas"] = unicas
+    # 🔥 NUEVO: datos de reportes
+    docentes_rep = coord_reportes_data()
+
+    ctx["docentes_rep"] = docentes_rep
     return render(request, "coord.html", ctx)
 
 @require_http_methods(["POST"])
@@ -1409,3 +1413,27 @@ def reemplazar_entrega(request):
         "success": True,
         "file_url": file_url
     })
+
+def coord_reportes_data():
+
+    with connection.cursor() as cur:
+        cur.execute("""
+            SELECT 
+                d.nombre,
+                r.total_entregas,
+                r.total_pendientes,
+                ROUND(
+                    (r.total_entregas * 100.0) / NULLIF(r.total_entregas + r.total_pendientes,0),2
+                ) AS porcentaje,
+                CASE 
+                    WHEN (r.total_entregas * 100.0) / NULLIF(r.total_entregas + r.total_pendientes,0) >= 80 THEN 'VERDE'
+                    WHEN (r.total_entregas * 100.0) / NULLIF(r.total_entregas + r.total_pendientes,0) >= 50 THEN 'AMARILLO'
+                    ELSE 'ROJO'
+                END AS semaforo
+            FROM vw_resumen_docente r
+            JOIN docentes d ON d.id = r.docente_id
+            ORDER BY porcentaje DESC
+        """)
+
+        columnas = [col[0] for col in cur.description]
+        return [dict(zip(columnas, fila)) for fila in cur.fetchall()]
