@@ -140,10 +140,52 @@
 
 <!-- TABLA -->
 <div class="col-md-7">
+<div class="row mb-3">
 
+<div class="col">
+<select id="f_docente" class="form-select">
+<option value="">Docente</option>
+{% for d in docentes_filtro %}
+<option>{{ d }}</option>
+{% endfor %}
+</select>
+</div>
+
+<div class="col">
+<select id="f_curso" class="form-select">
+<option value="">Curso</option>
+{% for c in cursos_filtro %}
+<option>{{ c }}</option>
+{% endfor %}
+</select>
+</div>
+
+<div class="col">
+<select id="f_tipo" class="form-select">
+<option value="">Tipo</option>
+{% for t in tipos_filtro %}
+<option>{{ t }}</option>
+{% endfor %}
+</select>
+</div>
+
+<div class="col">
+<select id="f_estado" class="form-select">
+<option value="">Estado</option>
+{% for e in estados_filtro %}
+<option>{{ e }}</option>
+{% endfor %}
+</select>
+</div>
+
+</div>
 <table class="table table-sm table-bordered">
 <thead>
-<tr>
+<tr class="fila"
+    data-docente="{{ e.docente }}"
+    data-curso="{{ e.curso }}"
+    data-tipo="{{ e.tipo }}"
+    data-estado="{{ e.estado }}">
 <th>Docente</th>
 <th>Curso</th>
 <th>Tipo</th>
@@ -231,5 +273,51 @@ document.querySelectorAll(".estado").forEach(select => {
   })
 })
 </script>
+
+<div class="modal fade" id="modalVisor" tabindex="-1">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Visor de Documento</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <iframe id="iframeVisor"
+                style="width:100%; height:600px; border:none;">
+        </iframe>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+
+document.querySelectorAll(".ver-doc").forEach(boton => {
+
+  boton.addEventListener("click", function(){
+
+    // 1. Obtener URL del archivo
+    let url = this.getAttribute("data-url")
+
+    // 2. Convertir a visor de Google (IMPORTANTE)
+    let viewer = "https://drive.google.com/viewerng/viewer?embedded=true&url=" 
+                 + encodeURIComponent(url)
+
+    // 3. Meter la URL en el iframe
+    document.getElementById("iframeVisor").src = viewer
+
+    // 4. Abrir el modal
+    let modal = new bootstrap.Modal(document.getElementById("modalVisor"))
+    modal.show()
+
+  })
+
+})
+
+</script>
+
 </body>
 </html>

@@ -737,7 +737,16 @@ def coord_panel(request):
         # "rubrica_c2_id": rubrica_c2_id,
     }
     revision_data = coord_revision_data()
-    ctx["revision_data"] = revision_data    
+    ctx["revision_data"] = revision_data
+    docentes_filtro = sorted(set([e["docente"] for e in revision_data]))
+    cursos_filtro = sorted(set([e["curso"] for e in revision_data]))
+    tipos_filtro = sorted(set([e["tipo"] for e in revision_data]))
+    estados_filtro = ["EN_REVISION", "REVISADO", "APROBADO"]
+
+    ctx["docentes_filtro"] = docentes_filtro
+    ctx["cursos_filtro"] = cursos_filtro
+    ctx["tipos_filtro"] = tipos_filtro
+    ctx["estados_filtro"] = estados_filtro    
     # ... arriba ya calculaste enunciados y tienes ctx armado ...
 # ctx = {"coordinador_email": email, "enunciados": enunciados, ...}
 
@@ -1495,11 +1504,12 @@ def coord_revision_data():
             JOIN cursos c ON c.id = e.curso_id
             JOIN tipos_entregable t ON t.id = e.tipo_id
             ORDER BY e.created_at DESC
-            LIMIT 200
         """)
 
         columnas = [col[0] for col in cur.description]
-        return [dict(zip(columnas, fila)) for fila in cur.fetchall()]
+        data = [dict(zip(columnas, fila)) for fila in cur.fetchall()]
+
+    return data
     
 @require_POST
 def cambiar_estado_entrega(request):
