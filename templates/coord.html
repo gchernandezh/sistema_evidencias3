@@ -184,22 +184,22 @@
 
 <table class="table table-sm table-bordered">
 <thead>
-<tr class="fila"
-    data-docente="{{ e.docente }}"
-    data-curso="{{ e.curso }}"
-    data-tipo="{{ e.tipo }}"
-    data-estado="{{ e.estado }}">
+<tr>
 <th>Docente</th>
 <th>Curso</th>
 <th>Tipo</th>
 <th>Estado</th>
-<th>Descargar</th>
+<th>Ver Archivo</th>
 </tr>
 </thead>
 
 <tbody>
 {% for e in revision_data %}
-<tr>
+<tr class="fila"
+    data-docente="{{ e.docente }}"
+    data-curso="{{ e.curso }}"
+    data-tipo="{{ e.tipo }}"
+    data-estado="{{ e.estado }}">
 
 <td>{{ e.docente }}</td>
 <td>{{ e.curso }}</td>
@@ -235,78 +235,60 @@ Ver
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
 <script>
-document.querySelectorAll(".ver-doc").forEach(btn => {
-  btn.addEventListener("click", function(){
-    document.getElementById("visor").src = this.dataset.url
-  })
-})
 
-document.querySelectorAll(".estado").forEach(select => {
-  select.addEventListener("change", function(){
+document.addEventListener("DOMContentLoaded", function(){
 
-    fetch("/coord/cambiar-estado/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "X-CSRFToken": "{{ csrf_token }}"
-      },
-      body: `entrega_id=${this.dataset.id}&estado=${this.value}`
+  const filas = Array.from(document.querySelectorAll(".fila"))
+
+  function obtenerOpciones(filasVisibles, atributo) {
+    return [...new Set(filasVisibles.map(f => f.dataset[atributo]))].sort()
+  }
+
+  function actualizarSelect(selectId, opciones) {
+    let select = document.getElementById(selectId)
+    let texto = select.options[0].text
+    let valorActual = select.value
+
+    select.innerHTML = `<option value="">${texto}</option>`
+
+    opciones.forEach(op => {
+      let selected = op === valorActual ? "selected" : ""
+      select.innerHTML += `<option ${selected}>${op}</option>`
+    })
+  }
+
+  function filtrar() {
+
+    let docente = document.getElementById("f_docente").value
+    let curso = document.getElementById("f_curso").value
+    let tipo = document.getElementById("f_tipo").value
+    let estado = document.getElementById("f_estado").value
+
+    let visibles = filas.filter(f => {
+
+      return (!docente || f.dataset.docente === docente) &&
+             (!curso || f.dataset.curso === curso) &&
+             (!tipo || f.dataset.tipo === tipo) &&
+             (!estado || f.dataset.estado === estado)
     })
 
-  })
+    filas.forEach(f => {
+      f.style.display = visibles.includes(f) ? "" : "none"
+    })
+
+    actualizarSelect("f_curso", obtenerOpciones(visibles, "curso"))
+    actualizarSelect("f_tipo", obtenerOpciones(visibles, "tipo"))
+    actualizarSelect("f_estado", obtenerOpciones(visibles, "estado"))
+  }
+
+  document.getElementById("f_docente").addEventListener("change", filtrar)
+  document.getElementById("f_curso").addEventListener("change", filtrar)
+  document.getElementById("f_tipo").addEventListener("change", filtrar)
+  document.getElementById("f_estado").addEventListener("change", filtrar)
+
 })
-</script>
-<script>
-
-const filas = Array.from(document.querySelectorAll(".fila"))
-
-function obtenerOpciones(filasVisibles, atributo) {
-  return [...new Set(filasVisibles.map(f => f.dataset[atributo]))].sort()
-}
-
-function actualizarSelect(selectId, opciones) {
-  let select = document.getElementById(selectId)
-  let valorActual = select.value
-
-  select.innerHTML = `<option value="">${select.options[0].text}</option>`
-
-  opciones.forEach(op => {
-    let selected = op === valorActual ? "selected" : ""
-    select.innerHTML += `<option ${selected}>${op}</option>`
-  })
-}
-
-function filtrar() {
-
-  let docente = document.getElementById("f_docente").value
-  let curso = document.getElementById("f_curso").value
-  let tipo = document.getElementById("f_tipo").value
-  let estado = document.getElementById("f_estado").value
-
-  let visibles = filas.filter(f => {
-
-    return (!docente || f.dataset.docente === docente) &&
-           (!curso || f.dataset.curso === curso) &&
-           (!tipo || f.dataset.tipo === tipo) &&
-           (!estado || f.dataset.estado === estado)
-  })
-
-  // 🔥 mostrar/ocultar filas
-  filas.forEach(f => {
-    f.style.display = visibles.includes(f) ? "" : "none"
-  })
-
-  // 🔥 actualizar combos dinámicamente
-  actualizarSelect("f_curso", obtenerOpciones(visibles, "curso"))
-  actualizarSelect("f_tipo", obtenerOpciones(visibles, "tipo"))
-  actualizarSelect("f_estado", obtenerOpciones(visibles, "estado"))
-}
-
-document.getElementById("f_docente").addEventListener("change", filtrar)
-document.getElementById("f_curso").addEventListener("change", filtrar)
-document.getElementById("f_tipo").addEventListener("change", filtrar)
-document.getElementById("f_estado").addEventListener("change", filtrar)
 
 </script>
 </body>
