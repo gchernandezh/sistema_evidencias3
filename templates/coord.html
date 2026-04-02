@@ -139,7 +139,7 @@
 <div class="row">
 
 <!-- TABLA -->
-<div class="col-md-7">
+<div class="col-md-12">
 <div class="row mb-3">
 
 <div class="col">
@@ -259,32 +259,54 @@ document.querySelectorAll(".estado").forEach(select => {
 </script>
 <script>
 
-function aplicarFiltros() {
+const filas = Array.from(document.querySelectorAll(".fila"))
+
+function obtenerOpciones(filasVisibles, atributo) {
+  return [...new Set(filasVisibles.map(f => f.dataset[atributo]))].sort()
+}
+
+function actualizarSelect(selectId, opciones) {
+  let select = document.getElementById(selectId)
+  let valorActual = select.value
+
+  select.innerHTML = `<option value="">${select.options[0].text}</option>`
+
+  opciones.forEach(op => {
+    let selected = op === valorActual ? "selected" : ""
+    select.innerHTML += `<option ${selected}>${op}</option>`
+  })
+}
+
+function filtrar() {
 
   let docente = document.getElementById("f_docente").value
   let curso = document.getElementById("f_curso").value
   let tipo = document.getElementById("f_tipo").value
   let estado = document.getElementById("f_estado").value
 
-  document.querySelectorAll(".fila").forEach(row => {
+  let visibles = filas.filter(f => {
 
-    let match =
-      (!docente || row.dataset.docente === docente) &&
-      (!curso || row.dataset.curso === curso) &&
-      (!tipo || row.dataset.tipo === tipo) &&
-      (!estado || row.dataset.estado === estado)
-
-    row.style.display = match ? "" : "none"
-
+    return (!docente || f.dataset.docente === docente) &&
+           (!curso || f.dataset.curso === curso) &&
+           (!tipo || f.dataset.tipo === tipo) &&
+           (!estado || f.dataset.estado === estado)
   })
+
+  // 🔥 mostrar/ocultar filas
+  filas.forEach(f => {
+    f.style.display = visibles.includes(f) ? "" : "none"
+  })
+
+  // 🔥 actualizar combos dinámicamente
+  actualizarSelect("f_curso", obtenerOpciones(visibles, "curso"))
+  actualizarSelect("f_tipo", obtenerOpciones(visibles, "tipo"))
+  actualizarSelect("f_estado", obtenerOpciones(visibles, "estado"))
 }
 
-
-// 🔥 EVENTOS
-document.getElementById("f_docente").addEventListener("change", aplicarFiltros)
-document.getElementById("f_curso").addEventListener("change", aplicarFiltros)
-document.getElementById("f_tipo").addEventListener("change", aplicarFiltros)
-document.getElementById("f_estado").addEventListener("change", aplicarFiltros)
+document.getElementById("f_docente").addEventListener("change", filtrar)
+document.getElementById("f_curso").addEventListener("change", filtrar)
+document.getElementById("f_tipo").addEventListener("change", filtrar)
+document.getElementById("f_estado").addEventListener("change", filtrar)
 
 </script>
 </body>
