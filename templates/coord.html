@@ -179,6 +179,9 @@
 </div>
 
 </div>
+
+
+
 <table class="table table-sm table-bordered">
 <thead>
 <tr class="fila"
@@ -190,7 +193,6 @@
 <th>Curso</th>
 <th>Tipo</th>
 <th>Estado</th>
-<th>Ver</th>
 <th>Descargar</th>
 </tr>
 </thead>
@@ -211,18 +213,9 @@
 <option value="APROBADO" {% if e.estado == "APROBADO" %}selected{% endif %}>Aprobado</option>
 </select>
 </td>
-
 <td>
-<button class="btn btn-sm btn-primary ver-doc"
-        data-url="{{ e.file_url }}">
+<a href="{{ e.file_url }}" target="_blank" class="btn btn-sm btn-primary">
 Ver
-</button>
-</td>
-
-<td>
-<a href="{{ e.file_url }}" target="_blank"
-   class="btn btn-sm btn-secondary">
-Descargar
 </a>
 </td>
 
@@ -231,15 +224,6 @@ Descargar
 </tbody>
 
 </table>
-
-</div>
-
-<!-- VISOR -->
-<div class="col-md-5">
-
-<iframe id="visor"
-        style="width:100%; height:500px; border:1px solid #ccc;">
-</iframe>
 
 </div>
 
@@ -273,51 +257,35 @@ document.querySelectorAll(".estado").forEach(select => {
   })
 })
 </script>
-
-<div class="modal fade" id="modalVisor" tabindex="-1">
-  <div class="modal-dialog modal-xl">
-    <div class="modal-content">
-
-      <div class="modal-header">
-        <h5 class="modal-title">Visor de Documento</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-
-      <div class="modal-body">
-        <iframe id="iframeVisor"
-                style="width:100%; height:600px; border:none;">
-        </iframe>
-      </div>
-
-    </div>
-  </div>
-</div>
-
 <script>
 
-document.querySelectorAll(".ver-doc").forEach(boton => {
+function aplicarFiltros() {
 
-  boton.addEventListener("click", function(){
+  let docente = document.getElementById("f_docente").value
+  let curso = document.getElementById("f_curso").value
+  let tipo = document.getElementById("f_tipo").value
+  let estado = document.getElementById("f_estado").value
 
-    // 1. Obtener URL del archivo
-    let url = this.getAttribute("data-url")
+  document.querySelectorAll(".fila").forEach(row => {
 
-    // 2. Convertir a visor de Google (IMPORTANTE)
-    let viewer = "https://drive.google.com/viewerng/viewer?embedded=true&url=" 
-                 + encodeURIComponent(url)
+    let match =
+      (!docente || row.dataset.docente === docente) &&
+      (!curso || row.dataset.curso === curso) &&
+      (!tipo || row.dataset.tipo === tipo) &&
+      (!estado || row.dataset.estado === estado)
 
-    // 3. Meter la URL en el iframe
-    document.getElementById("iframeVisor").src = viewer
-
-    // 4. Abrir el modal
-    let modal = new bootstrap.Modal(document.getElementById("modalVisor"))
-    modal.show()
+    row.style.display = match ? "" : "none"
 
   })
+}
 
-})
+
+// 🔥 EVENTOS
+document.getElementById("f_docente").addEventListener("change", aplicarFiltros)
+document.getElementById("f_curso").addEventListener("change", aplicarFiltros)
+document.getElementById("f_tipo").addEventListener("change", aplicarFiltros)
+document.getElementById("f_estado").addEventListener("change", aplicarFiltros)
 
 </script>
-
 </body>
 </html>
