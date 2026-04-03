@@ -1545,19 +1545,45 @@ def coord_docente_detalle(request, docente_id):
         """, [docente_id])
         docente = cur.fetchone()[0]
 
-        # 🟢 resumen
+        # 🟢 RESUMEN (CON REGLAS)
         cur.execute("""
             SELECT 
-                COUNT(DISTINCT r.curso_id || '-' || r.tipo_id) AS requeridas,
-                COUNT(DISTINCT e.curso_id || '-' || e.tipo_id) AS entregadas
+
+                -- 🔵 REQUERIDAS
+                COUNT(*) FILTER (
+                    WHERE r.obligatorio = true
+                )
+                +
+                COUNT(*) FILTER (
+                    WHERE r.obligatorio = false AND e.id IS NOT NULL
+                ) AS requeridas,
+
+                -- 🟢 ENTREGADAS
+                COUNT(*) FILTER (
+                    WHERE r.obligatorio = true AND e.id IS NOT NULL
+                )
+                +
+                COUNT(*) FILTER (
+                    WHERE r.obligatorio = false AND e.id IS NOT NULL
+                ) AS entregadas
+
             FROM asignaciones a
-            LEFT JOIN vw_entregas_requeridas_efectivas r 
+
+            JOIN vw_entregas_requeridas_efectivas r 
                 ON r.curso_id = a.curso_id
+
             LEFT JOIN entregas e 
                 ON e.curso_id = r.curso_id
                 AND e.tipo_id = r.tipo_id
                 AND e.docente_id = a.docente_id
+
             WHERE a.docente_id = %s
+
+            -- 🔴 EXCLUIR RÚBRICAS CUANDO NO EXISTEN (PARCIAL)
+            AND NOT (
+                LOWER(r.nombre_tipo) LIKE '%rúbrica%'
+                AND e.id IS NULL
+            )
         """, [docente_id])
 
         req, ent = cur.fetchone()
@@ -1565,21 +1591,45 @@ def coord_docente_detalle(request, docente_id):
         porcentaje = round((ent * 100) / req, 2) if req else 0
         pendientes = req - ent if req and ent else req or 0
 
-        # 🔵 por curso
+        # 🔵 POR CURSO (CON REGLAS)
         cur.execute("""
             SELECT 
                 c.nombre,
-                COUNT(DISTINCT r.tipo_id) AS requeridas,
-                COUNT(DISTINCT e.tipo_id) AS entregadas
+
+                COUNT(*) FILTER (
+                    WHERE r.obligatorio = true
+                )
+                +
+                COUNT(*) FILTER (
+                    WHERE r.obligatorio = false AND e.id IS NOT NULL
+                ) AS requeridas,
+
+                COUNT(*) FILTER (
+                    WHERE r.obligatorio = true AND e.id IS NOT NULL
+                )
+                +
+                COUNT(*) FILTER (
+                    WHERE r.obligatorio = false AND e.id IS NOT NULL
+                ) AS entregadas
+
             FROM asignaciones a
             JOIN cursos c ON c.id = a.curso_id
-            LEFT JOIN vw_entregas_requeridas_efectivas r 
+
+            JOIN vw_entregas_requeridas_efectivas r 
                 ON r.curso_id = c.id
+
             LEFT JOIN entregas e 
                 ON e.curso_id = c.id 
                 AND e.tipo_id = r.tipo_id
                 AND e.docente_id = a.docente_id
+
             WHERE a.docente_id = %s
+
+            AND NOT (
+                LOWER(r.nombre_tipo) LIKE '%rúbrica%'
+                AND e.id IS NULL
+            )
+
             GROUP BY c.nombre
         """, [docente_id])
 
@@ -1592,13 +1642,13 @@ def coord_docente_detalle(request, docente_id):
             entregadas = row[2]
 
             if requeridas > 0:
-                porcentaje = round((entregadas * 100) / requeridas, 2)
+                porcentaje_curso = round((entregadas * 100) / requeridas, 2)
             else:
-                porcentaje = 0
+                porcentaje_curso = 0
 
-            cursos.append((nombre, requeridas, entregadas, porcentaje))
+            cursos.append((nombre, requeridas, entregadas, porcentaje_curso))
 
-        # 🔴 pendientes
+        # 🔴 PENDIENTES (CON REGLAS)
         cur.execute("""
             SELECT 
                 c.nombre,
@@ -1607,42 +1657,50 @@ def coord_docente_detalle(request, docente_id):
             JOIN cursos c ON c.id = a.curso_id
             JOIN vw_entregas_requeridas_efectivas r ON r.curso_id = c.id
             JOIN tipos_entregable t ON t.id = r.tipo_id
+
             LEFT JOIN entregas e 
                 ON e.curso_id = c.id 
                 AND e.tipo_id = t.id
                 AND e.docente_id = a.docente_id
+
             WHERE a.docente_id = %s
               AND e.id IS NULL
+
+              -- 🔴 NO CONTAR OPCIONALES
+              AND r.obligatorio = true
+
+              -- 🔴 NO CONTAR RÚBRICAS SI NO EXISTEN
+              AND NOT (
+                  LOWER(t.nombre) LIKE '%rúbrica%'
+              )
         """, [docente_id])
 
         pendientes_lista = cur.fetchall()
         pendientes_total = len(pendientes_lista)
 
-    ###################################
+        # 🟣 TIPOS (SE MANTIENE)
         cur.execute("""
-        SELECT 
-            t.nombre,
-            CASE 
-                WHEN COUNT(e.id) > 0 THEN 'ENTREGADO'
-                ELSE 'PENDIENTE'
-            END as estado
-        FROM asignaciones a
-        JOIN vw_entregas_requeridas_efectivas r 
-            ON r.curso_id = a.curso_id
-        JOIN tipos_entregable t 
-            ON t.id = r.tipo_id
-        LEFT JOIN entregas e 
-            ON e.curso_id = r.curso_id 
-            AND e.tipo_id = r.tipo_id
-            AND e.docente_id = a.docente_id
-        WHERE a.docente_id = %s
-        GROUP BY t.nombre
-        ORDER BY t.nombre
-    """, [docente_id])
+            SELECT 
+                t.nombre,
+                CASE 
+                    WHEN COUNT(e.id) > 0 THEN 'ENTREGADO'
+                    ELSE 'PENDIENTE'
+                END as estado
+            FROM asignaciones a
+            JOIN vw_entregas_requeridas_efectivas r 
+                ON r.curso_id = a.curso_id
+            JOIN tipos_entregable t 
+                ON t.id = r.tipo_id
+            LEFT JOIN entregas e 
+                ON e.curso_id = r.curso_id 
+                AND e.tipo_id = r.tipo_id
+                AND e.docente_id = a.docente_id
+            WHERE a.docente_id = %s
+            GROUP BY t.nombre
+            ORDER BY t.nombre
+        """, [docente_id])
 
         tipos = cur.fetchall()
-
-    ###################################
 
     return render(request, "coord_docente.html", {
         "docente": docente,
