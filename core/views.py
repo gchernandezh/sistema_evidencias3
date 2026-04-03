@@ -1456,6 +1456,7 @@ def coord_reportes_data():
                 GROUP BY a.docente_id
             )
             SELECT 
+                d.id,
                 d.nombre,
                 COALESCE(b.entregadas,0) AS entregadas,
                 COALESCE(b.requeridas,0) AS requeridas

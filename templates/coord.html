@@ -110,7 +110,7 @@
 <tbody>
 {% for d in docentes_rep %}
 <tr>
-<td><a href="/coord/docente/{{ d.id }}">{{ d.nombre }}</a></td>
+<td>{{ d.id }} - {{ d.nombre }}</td>
 <td>{{ d.entregadas }}</td>
 <td>{{ d.requeridas }}</td>
 <td>{{ d.porcentaje }}%</td>
