@@ -1534,7 +1534,6 @@ def cambiar_estado_entrega(request):
     return JsonResponse({"success": True})
 
 def coord_docente_detalle(request, docente_id):
-    from django.db import connection
 
     with connection.cursor() as cur:
 
@@ -1583,7 +1582,20 @@ def coord_docente_detalle(request, docente_id):
             GROUP BY c.nombre
         """, [docente_id])
 
-        cursos = cur.fetchall()
+        cursos_raw = cur.fetchall()
+
+        cursos = []
+        for row in cursos_raw:
+            nombre = row[0]
+            requeridas = row[1]
+            entregadas = row[2]
+
+            if requeridas > 0:
+                porcentaje = round((entregadas * 100) / requeridas, 2)
+            else:
+                porcentaje = 0
+
+            cursos.append((nombre, requeridas, entregadas, porcentaje))
 
         # 🔴 pendientes
         cur.execute("""

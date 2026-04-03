@@ -348,6 +348,21 @@ document.addEventListener("DOMContentLoaded", function(){
 });
 </script>
 
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+  const params = new URLSearchParams(window.location.search)
+  const tab = params.get("tab")
+
+  if (tab) {
+    const trigger = document.querySelector(`[data-bs-target="#${tab}"]`)
+    if (trigger) {
+      new bootstrap.Tab(trigger).show()
+    }
+  }
+
+})
+</script>
 
 </body>
 </html>

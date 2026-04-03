@@ -118,15 +118,20 @@
         {% for c in cursos %}
         {% with porcentaje_curso=c.2|floatformat:2|default:0 %}
         <tr>
-          <td>{{ c.0 }}</td>
-          <td>{{ c.1 }}</td>
-          <td>{{ c.2 }}</td>
+        <td>{{ c.0 }}</td>
+        <td>{{ c.1 }}</td>
+        <td>{{ c.2 }}</td>
+        <td>{{ c.3|floatformat:0 }}%</td>
 
-          {% if c.1 > 0 %}
-          <td>{{ c.2|floatformat:0|divisibleby:c.1 }}%</td>
-          {% else %}
-          <td>0%</td>
-          {% endif %}
+        <td>
+        <span class="badge 
+            {% if c.3 >= 80 %}bg-success
+            {% elif c.3 >= 50 %}bg-warning
+            {% else %}bg-danger
+            {% endif %}">
+            {{ c.3|floatformat:0 }}%
+        </span>
+        </td>
 
           <td>
             {% if c.1 > 0 %}
