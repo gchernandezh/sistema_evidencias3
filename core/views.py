@@ -1537,126 +1537,32 @@ def coord_docente_detalle(request, docente_id):
 
     with connection.cursor() as cur:
 
-        # 🔵 info docente
+        # 🔵 DOCENTE
         cur.execute("""
             SELECT nombre
             FROM docentes
             WHERE id = %s
         """, [docente_id])
-        docente = cur.fetchone()[0]
 
-        # 🟢 RESUMEN (CON REGLAS)
+        row = cur.fetchone()
+        docente = row[0] if row else "Docente"
+
+        # 🟢 TRAER TODO (SIN LÓGICA COMPLEJA)
         cur.execute("""
             SELECT 
-
-                -- 🔵 REQUERIDAS
-                COUNT(*) FILTER (
-                    WHERE r.obligatorio = true
-                )
-                +
-                COUNT(*) FILTER (
-                    WHERE r.obligatorio = false AND e.id IS NOT NULL
-                ) AS requeridas,
-
-                -- 🟢 ENTREGADAS
-                COUNT(*) FILTER (
-                    WHERE r.obligatorio = true AND e.id IS NOT NULL
-                )
-                +
-                COUNT(*) FILTER (
-                    WHERE r.obligatorio = false AND e.id IS NOT NULL
-                ) AS entregadas
-
+                c.nombre as curso,
+                t.nombre as tipo,
+                r.obligatorio,
+                e.id as entregado
             FROM asignaciones a
 
-            JOIN vw_entregas_requeridas_efectivas r 
-                ON r.curso_id = a.curso_id
-
-            LEFT JOIN entregas e 
-                ON e.curso_id = r.curso_id
-                AND e.tipo_id = r.tipo_id
-                AND e.docente_id = a.docente_id
-
-            WHERE a.docente_id = %s
-
-            -- 🔴 EXCLUIR RÚBRICAS CUANDO NO EXISTEN (PARCIAL)
-            AND NOT (
-                LOWER(r.nombre_tipo) LIKE '%rúbrica%'
-                AND e.id IS NULL
-            )
-        """, [docente_id])
-
-        req, ent = cur.fetchone()
-
-        porcentaje = round((ent * 100) / req, 2) if req else 0
-        pendientes = req - ent if req and ent else req or 0
-
-        # 🔵 POR CURSO (CON REGLAS)
-        cur.execute("""
-            SELECT 
-                c.nombre,
-
-                COUNT(*) FILTER (
-                    WHERE r.obligatorio = true
-                )
-                +
-                COUNT(*) FILTER (
-                    WHERE r.obligatorio = false AND e.id IS NOT NULL
-                ) AS requeridas,
-
-                COUNT(*) FILTER (
-                    WHERE r.obligatorio = true AND e.id IS NOT NULL
-                )
-                +
-                COUNT(*) FILTER (
-                    WHERE r.obligatorio = false AND e.id IS NOT NULL
-                ) AS entregadas
-
-            FROM asignaciones a
             JOIN cursos c ON c.id = a.curso_id
 
             JOIN vw_entregas_requeridas_efectivas r 
                 ON r.curso_id = c.id
 
-            LEFT JOIN entregas e 
-                ON e.curso_id = c.id 
-                AND e.tipo_id = r.tipo_id
-                AND e.docente_id = a.docente_id
-
-            WHERE a.docente_id = %s
-
-            AND NOT (
-                LOWER(r.nombre_tipo) LIKE '%rúbrica%'
-                AND e.id IS NULL
-            )
-
-            GROUP BY c.nombre
-        """, [docente_id])
-
-        cursos_raw = cur.fetchall()
-
-        cursos = []
-        for row in cursos_raw:
-            nombre = row[0]
-            requeridas = row[1]
-            entregadas = row[2]
-
-            if requeridas > 0:
-                porcentaje_curso = round((entregadas * 100) / requeridas, 2)
-            else:
-                porcentaje_curso = 0
-
-            cursos.append((nombre, requeridas, entregadas, porcentaje_curso))
-
-        # 🔴 PENDIENTES (CON REGLAS)
-        cur.execute("""
-            SELECT 
-                c.nombre,
-                t.nombre
-            FROM asignaciones a
-            JOIN cursos c ON c.id = a.curso_id
-            JOIN vw_entregas_requeridas_efectivas r ON r.curso_id = c.id
-            JOIN tipos_entregable t ON t.id = r.tipo_id
+            JOIN tipos_entregable t 
+                ON t.id = r.tipo_id
 
             LEFT JOIN entregas e 
                 ON e.curso_id = c.id 
@@ -1664,48 +1570,93 @@ def coord_docente_detalle(request, docente_id):
                 AND e.docente_id = a.docente_id
 
             WHERE a.docente_id = %s
-              AND e.id IS NULL
-
-              -- 🔴 NO CONTAR OPCIONALES
-              AND r.obligatorio = true
-
-              -- 🔴 NO CONTAR RÚBRICAS SI NO EXISTEN
-              AND NOT (
-                  LOWER(t.nombre) LIKE '%rúbrica%'
-              )
         """, [docente_id])
 
-        pendientes_lista = cur.fetchall()
-        pendientes_total = len(pendientes_lista)
+        filas = cur.fetchall()
 
-        # 🟣 TIPOS (SE MANTIENE)
-        cur.execute("""
-            SELECT 
-                t.nombre,
-                CASE 
-                    WHEN COUNT(e.id) > 0 THEN 'ENTREGADO'
-                    ELSE 'PENDIENTE'
-                END as estado
-            FROM asignaciones a
-            JOIN vw_entregas_requeridas_efectivas r 
-                ON r.curso_id = a.curso_id
-            JOIN tipos_entregable t 
-                ON t.id = r.tipo_id
-            LEFT JOIN entregas e 
-                ON e.curso_id = r.curso_id 
-                AND e.tipo_id = r.tipo_id
-                AND e.docente_id = a.docente_id
-            WHERE a.docente_id = %s
-            GROUP BY t.nombre
-            ORDER BY t.nombre
-        """, [docente_id])
+    # 🧠 PROCESAMIENTO EN PYTHON (ULTRA SEGURO)
 
-        tipos = cur.fetchall()
+    requeridas = 0
+    entregadas = 0
+
+    cursos_dict = {}
+    pendientes_lista = []
+
+    # 🔍 detectar si hay rúbrica por curso
+    rubricas_por_curso = {}
+
+    for f in filas:
+        curso, tipo, obligatorio, entregado = f
+
+        if curso not in rubricas_por_curso:
+            rubricas_por_curso[curso] = False
+
+        if "rúbrica" in tipo.lower() and entregado:
+            rubricas_por_curso[curso] = True
+
+    # 🔁 recorrer de nuevo con lógica
+    for f in filas:
+        curso, tipo, obligatorio, entregado = f
+
+        es_rubrica = "rúbrica" in tipo.lower()
+
+        # 🔴 REGLA 1: ignorar rúbrica si no hay (parcial)
+        if es_rubrica and not rubricas_por_curso[curso]:
+            continue
+
+        # 🔴 REGLA 2: opcional solo cuenta si existe
+        if not obligatorio and not entregado:
+            continue
+
+        # ✔ cuenta como requerida
+        requeridas += 1
+
+        # ✔ cuenta como entregada
+        if entregado:
+            entregadas += 1
+
+        else:
+            pendientes_lista.append((curso, tipo))
+
+        # 📊 por curso
+        if curso not in cursos_dict:
+            cursos_dict[curso] = {"req": 0, "ent": 0}
+
+        cursos_dict[curso]["req"] += 1
+
+        if entregado:
+            cursos_dict[curso]["ent"] += 1
+
+    # 🟢 porcentaje general
+    porcentaje = round((entregadas * 100) / requeridas, 2) if requeridas else 0
+    pendientes_total = len(pendientes_lista)
+
+    # 🔵 convertir cursos a lista
+    cursos = []
+    for nombre, data in cursos_dict.items():
+        req = data["req"]
+        ent = data["ent"]
+        pct = round((ent * 100) / req, 2) if req else 0
+        cursos.append((nombre, req, ent, pct))
+
+    # 🟣 tipos (simple)
+    tipos_dict = {}
+
+    for f in filas:
+        _, tipo, _, entregado = f
+
+        if tipo not in tipos_dict:
+            tipos_dict[tipo] = False
+
+        if entregado:
+            tipos_dict[tipo] = True
+
+    tipos = [(k, "ENTREGADO" if v else "PENDIENTE") for k, v in tipos_dict.items()]
 
     return render(request, "coord_docente.html", {
         "docente": docente,
-        "requeridas": req,
-        "entregadas": ent,
+        "requeridas": requeridas,
+        "entregadas": entregadas,
         "porcentaje": porcentaje,
         "pendientes_total": pendientes_total,
         "cursos": cursos,
