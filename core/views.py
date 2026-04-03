@@ -1531,3 +1531,83 @@ def cambiar_estado_entrega(request):
         """, [estado, entrega_id])
 
     return JsonResponse({"success": True})
+
+def coord_docente_detalle(request, docente_id):
+    from django.db import connection
+
+    with connection.cursor() as cur:
+
+        # 🔵 info docente
+        cur.execute("""
+            SELECT nombre
+            FROM docentes
+            WHERE id = %s
+        """, [docente_id])
+        docente = cur.fetchone()[0]
+
+        # 🟢 resumen
+        cur.execute("""
+            SELECT 
+                COUNT(DISTINCT r.curso_id || '-' || r.tipo_id) AS requeridas,
+                COUNT(DISTINCT e.curso_id || '-' || e.tipo_id) AS entregadas
+            FROM asignaciones a
+            LEFT JOIN vw_entregas_requeridas_efectivas r 
+                ON r.curso_id = a.curso_id
+            LEFT JOIN entregas e 
+                ON e.curso_id = r.curso_id
+                AND e.tipo_id = r.tipo_id
+                AND e.docente_id = a.docente_id
+            WHERE a.docente_id = %s
+        """, [docente_id])
+
+        req, ent = cur.fetchone()
+
+        porcentaje = round((ent * 100) / req, 2) if req else 0
+
+        # 🔵 por curso
+        cur.execute("""
+            SELECT 
+                c.nombre,
+                COUNT(DISTINCT r.tipo_id) AS requeridas,
+                COUNT(DISTINCT e.tipo_id) AS entregadas
+            FROM asignaciones a
+            JOIN cursos c ON c.id = a.curso_id
+            LEFT JOIN vw_entregas_requeridas_efectivas r 
+                ON r.curso_id = c.id
+            LEFT JOIN entregas e 
+                ON e.curso_id = c.id 
+                AND e.tipo_id = r.tipo_id
+                AND e.docente_id = a.docente_id
+            WHERE a.docente_id = %s
+            GROUP BY c.nombre
+        """, [docente_id])
+
+        cursos = cur.fetchall()
+
+        # 🔴 pendientes
+        cur.execute("""
+            SELECT 
+                c.nombre,
+                t.nombre
+            FROM asignaciones a
+            JOIN cursos c ON c.id = a.curso_id
+            JOIN vw_entregas_requeridas_efectivas r ON r.curso_id = c.id
+            JOIN tipos_entregable t ON t.id = r.tipo_id
+            LEFT JOIN entregas e 
+                ON e.curso_id = c.id 
+                AND e.tipo_id = t.id
+                AND e.docente_id = a.docente_id
+            WHERE a.docente_id = %s
+              AND e.id IS NULL
+        """, [docente_id])
+
+        pendientes = cur.fetchall()
+
+    return render(request, "coord_docente.html", {
+        "docente": docente,
+        "requeridas": req,
+        "entregadas": ent,
+        "porcentaje": porcentaje,
+        "cursos": cursos,
+        "pendientes": pendientes
+    })

@@ -31,6 +31,7 @@ urlpatterns = [
     path("docente/correcciones/", views.visualizacion_correcciones, name="visualizacion_correcciones"),
     path("docente/reemplazar/", views.reemplazar_entrega, name="reemplazar_entrega"),
     path('coord/cambiar-estado/', views.cambiar_estado_entrega),
+    path('coord/docente/<int:docente_id>/', views.coord_docente_detalle),
 ]
 # Solo en desarrollo: servir /static/ y /media/
 if settings.DEBUG:

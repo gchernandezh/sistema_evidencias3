@@ -1,0 +1,35 @@
+<h2>{{ docente }}</h2>
+
+<hr>
+
+<h4>Resumen</h4>
+<p>Requeridas: {{ requeridas }}</p>
+<p>Entregadas: {{ entregadas }}</p>
+<p>%: {{ porcentaje }}%</p>
+
+<hr>
+
+<h4>Por Curso</h4>
+<table border="1">
+<tr><th>Curso</th><th>Req</th><th>Ent</th></tr>
+{% for c in cursos %}
+<tr>
+<td>{{ c.0 }}</td>
+<td>{{ c.1 }}</td>
+<td>{{ c.2 }}</td>
+</tr>
+{% endfor %}
+</table>
+
+<hr>
+
+<h4>Pendientes</h4>
+<table border="1">
+<tr><th>Curso</th><th>Tipo</th></tr>
+{% for p in pendientes %}
+<tr>
+<td>{{ p.0 }}</td>
+<td>{{ p.1 }}</td>
+</tr>
+{% endfor %}
+</table>
