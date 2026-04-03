@@ -1563,6 +1563,7 @@ def coord_docente_detalle(request, docente_id):
         req, ent = cur.fetchone()
 
         porcentaje = round((ent * 100) / req, 2) if req else 0
+        pendientes = req - ent if req and ent else req or 0
 
         # 🔵 por curso
         cur.execute("""
@@ -1622,5 +1623,6 @@ def coord_docente_detalle(request, docente_id):
         "entregadas": ent,
         "porcentaje": porcentaje,
         "cursos": cursos,
-        "pendientes": pendientes
+        "pendientes": pendientes,
+        "pendientes_total": pendientes
     })
