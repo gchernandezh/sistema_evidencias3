@@ -1629,7 +1629,7 @@ def coord_docente_detalle(request, docente_id):
         # pendientes simples
         cur.execute("""
             SELECT 
-                c.nombre || ' - Grupo ' || a.grupo,
+                c.nombre || ' - Grupo ' || c.grupo,
                 t.nombre,
                 r.obligatorio
             FROM asignaciones a
