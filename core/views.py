@@ -1548,29 +1548,27 @@ def coord_docente_detalle(request, docente_id):
         docente = row[0] if row else "Docente"
 
         # 🟢 TRAER TODO (SIN LÓGICA COMPLEJA)
-        # 🟢 RESUMEN (OPTIMIZADO)
+        # 🟢 resumen
         cur.execute("""
             SELECT 
-                COUNT(*) FILTER (
-                    WHERE r.obligatorio = true
-                ) AS requeridas,
-
-                COUNT(*) FILTER (
-                    WHERE r.obligatorio = true AND e.id IS NOT NULL
-                ) AS entregadas
-
+                COUNT(DISTINCT r.curso_id || '-' || r.tipo_id) AS requeridas,
+                COUNT(DISTINCT e.curso_id || '-' || e.tipo_id) AS entregadas
             FROM asignaciones a
-
-            JOIN vw_entregas_requeridas_efectivas r 
+            LEFT JOIN vw_entregas_requeridas_efectivas r 
                 ON r.curso_id = a.curso_id
-
             LEFT JOIN entregas e 
                 ON e.curso_id = r.curso_id
                 AND e.tipo_id = r.tipo_id
                 AND e.docente_id = a.docente_id
-
             WHERE a.docente_id = %s
         """, [docente_id])
+
+        row = cur.fetchone()
+
+        if row:
+            req, ent = row
+        else:
+            req, ent = 0, 0
 
         row = cur.fetchone()
 
