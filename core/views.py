@@ -1563,6 +1563,37 @@ def coord_docente_detalle(request, docente_id):
         row = cur.fetchone()
         req, ent = row if row else (0, 0)
 
+        cur.execute("""
+            SELECT r.obligatorio, e.id
+            FROM asignaciones a
+            JOIN vw_entregas_requeridas_efectivas r 
+                ON r.curso_id = a.curso_id
+            LEFT JOIN entregas e 
+                ON e.curso_id = r.curso_id
+                AND e.tipo_id = r.tipo_id
+                AND e.docente_id = a.docente_id
+            WHERE a.docente_id = %s
+        """, [docente_id])
+
+        filas = cur.fetchall()
+
+        req_real = 0
+        ent_real = 0
+
+        for obligatorio, entregado in filas:
+
+            # opcional NO entregado → no cuenta
+            if not obligatorio and not entregado:
+                continue
+
+            req_real += 1
+
+            if entregado:
+                ent_real += 1
+        
+        req = req_real
+        ent = ent_real
+
         porcentaje = round((ent * 100) / req, 2) if req else 0
         pendientes_total = req - ent if req else 0
 
