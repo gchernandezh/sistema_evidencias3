@@ -1629,8 +1629,9 @@ def coord_docente_detalle(request, docente_id):
         # pendientes simples
         cur.execute("""
             SELECT 
-                c.nombre,
-                t.nombre
+                c.nombre || ' - Grupo ' || a.grupo,
+                t.nombre,
+                r.obligatorio
             FROM asignaciones a
             JOIN cursos c ON c.id = a.curso_id
             JOIN vw_entregas_requeridas_efectivas r ON r.curso_id = c.id

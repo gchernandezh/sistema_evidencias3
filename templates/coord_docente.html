@@ -197,6 +197,14 @@
 
   <div class="card-body">
 
+  <div class="alert alert-info">
+    <strong>Nota:</strong><br>
+    ✔ Los entregables <b>obligatorios</b> afectan el porcentaje.<br>
+    ✔ Los <b>opcionales</b> solo cuentan si se entregan.<br>
+    ✔ Las rúbricas solo aplican si el entregable corresponde a proyecto.
+  </div>
+
+
     {% if pendientes %}
     <table class="table table-bordered table-sm">
       <thead>
@@ -208,9 +216,17 @@
 
       <tbody>
         {% for p in pendientes %}
-        <tr>
+        <tr class="{% if p.2 %}table-danger{% else %}table-light{% endif %}">
           <td>{{ p.0 }}</td>
           <td>{{ p.1 }}</td>
+
+          <td>
+            {% if p.2 %}
+              <span class="badge bg-danger">Obligatorio</span>
+            {% else %}
+              <span class="badge bg-secondary">Opcional</span>
+            {% endif %}
+          </td>
         </tr>
         {% endfor %}
       </tbody>
