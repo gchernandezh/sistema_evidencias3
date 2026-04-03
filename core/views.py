@@ -1615,14 +1615,15 @@ def coord_docente_detalle(request, docente_id):
               AND e.id IS NULL
         """, [docente_id])
 
-        pendientes = cur.fetchall()
+        pendientes_lista = cur.fetchall()
+        pendientes_total = len(pendientes_lista)
 
     return render(request, "coord_docente.html", {
         "docente": docente,
         "requeridas": req,
         "entregadas": ent,
         "porcentaje": porcentaje,
+        "pendientes_total": pendientes_total,
         "cursos": cursos,
-        "pendientes": pendientes,
-        "pendientes_total": pendientes
+        "pendientes": pendientes_lista
     })
