@@ -1618,6 +1618,32 @@ def coord_docente_detalle(request, docente_id):
         pendientes_lista = cur.fetchall()
         pendientes_total = len(pendientes_lista)
 
+    ###################################
+    cur.execute("""
+    SELECT 
+        t.nombre,
+        CASE 
+            WHEN COUNT(e.id) > 0 THEN 'ENTREGADO'
+            ELSE 'PENDIENTE'
+        END as estado
+    FROM asignaciones a
+    JOIN vw_entregas_requeridas_efectivas r 
+        ON r.curso_id = a.curso_id
+    JOIN tipos_entregable t 
+        ON t.id = r.tipo_id
+    LEFT JOIN entregas e 
+        ON e.curso_id = r.curso_id 
+        AND e.tipo_id = r.tipo_id
+        AND e.docente_id = a.docente_id
+    WHERE a.docente_id = %s
+    GROUP BY t.nombre
+    ORDER BY t.nombre
+""", [docente_id])
+
+    tipos = cur.fetchall()
+
+    ###################################
+
     return render(request, "coord_docente.html", {
         "docente": docente,
         "requeridas": req,
@@ -1625,5 +1651,6 @@ def coord_docente_detalle(request, docente_id):
         "porcentaje": porcentaje,
         "pendientes_total": pendientes_total,
         "cursos": cursos,
-        "pendientes": pendientes_lista
+        "pendientes": pendientes_lista,
+        "tipos": tipos
     })

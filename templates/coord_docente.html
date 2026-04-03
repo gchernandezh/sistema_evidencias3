@@ -156,6 +156,39 @@
   </div>
 </div>
 
+<!-- 📄 POR TIPO -->
+<div class="card mt-4">
+  <div class="card-header">
+    <h5>Cumplimiento por Tipo</h5>
+  </div>
+
+  <div class="card-body">
+    <table class="table table-bordered table-sm">
+      <thead>
+        <tr>
+          <th>Tipo</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for t in tipos %}
+        <tr>
+          <td>{{ t.0 }}</td>
+          <td>
+            {% if t.1 == "ENTREGADO" %}
+              <span class="badge bg-success">✔ Entregado</span>
+            {% else %}
+              <span class="badge bg-danger">✖ Pendiente</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
 <!-- 🔴 PENDIENTES -->
 <div class="card shadow-sm">
   <div class="card-header bg-white">
