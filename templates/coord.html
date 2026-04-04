@@ -96,7 +96,7 @@
 
 <div class="card-body">
 
-<table class="table table-sm table-bordered">
+<table id="tabla-reportes" class="table table-sm table-bordered">
 <thead>
 <tr>
 <th>Docente</th>
@@ -334,8 +334,11 @@ document.addEventListener("DOMContentLoaded", function(){
       .then(data => {
 
         if(data.success){
-          console.log("✔ Estado guardado")
-        } else {
+        console.log("✔ Estado guardado")
+
+        // 🔥 refrescar reportes
+        recargarReportes()} 
+        else {
           alert("Error al guardar")
         }
 
@@ -349,6 +352,24 @@ document.addEventListener("DOMContentLoaded", function(){
   })
 
 });
+
+function recargarReportes(){
+
+  fetch("/coord/?tab=reportes")
+    .then(res => res.text())
+    .then(html => {
+
+      const parser = new DOMParser()
+      const doc = parser.parseFromString(html, "text/html")
+
+      const nuevaTabla = doc.querySelector("#tabla-reportes")
+
+      if(nuevaTabla){
+        document.querySelector("#tabla-reportes").innerHTML = nuevaTabla.innerHTML
+      }
+
+    })
+}
 </script>
 
 <script>
@@ -366,6 +387,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
 })
 </script>
+
+
 
 </body>
 </html>
