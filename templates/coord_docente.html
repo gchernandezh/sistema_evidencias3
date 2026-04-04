@@ -15,6 +15,37 @@
       border-bottom: 3px solid var(--brand-accent);
     }
     .navbar .navbar-brand, .navbar .nav-link{ color:#fff !important; }
+
+
+
+
+    @media print {
+
+      body {
+        background: white !important;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+
+      .btn {
+        display: none !important;
+      }
+
+      .card {
+        box-shadow: none !important;
+        border: 1px solid #ccc !important;
+      }
+
+      .container {
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+
+    }
+
+
   </style>
 </head>
 {% load static %}
@@ -27,9 +58,9 @@
   <a href="/coord/?tab=reportes" class="btn btn-outline-secondary">
     ← Volver a Reportes
   </a>
-  <a href="/coord/docente/pdf/{{ docente_id }}/" class="btn btn-danger">
+  <button onclick="window.print()" class="btn btn-danger no-print">
     📄 Descargar PDF
-  </a>
+  </button>
 </div>
 
 <!-- 🔵 CABECERA -->
