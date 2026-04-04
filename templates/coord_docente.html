@@ -119,40 +119,26 @@
 
       <tbody>
         {% for c in cursos %}
-        {% with porcentaje_curso=c.2|floatformat:2|default:0 %}
         <tr>
-        <td>{{ c.0 }}</td>
-        <td>{{ c.1 }}</td>
-        <td>{{ c.2 }}</td>
-        <td>{{ c.3|floatformat:0 }}%</td>
+          <td>{{ c.0 }}</td>
+          <td>{{ c.1 }}</td>
+          <td>{{ c.2 }}</td>
 
-        <td>
-        <span class="badge 
-            {% if c.3 >= 80 %}bg-success
-            {% elif c.3 >= 50 %}bg-warning
-            {% else %}bg-danger
-            {% endif %}">
-            {{ c.3|floatformat:0 }}%
-        </span>
-        </td>
+          <!-- % SOLO UNA VEZ -->
+          <td>{{ c.3|floatformat:0 }}%</td>
 
+          <!-- SEMÁFORO -->
           <td>
-            {% if c.1 > 0 %}
-              {% widthratio c.2 c.1 100 as pct %}
-              <span class="badge 
-                {% if pct >= 80 %}bg-success
-                {% elif pct >= 50 %}bg-warning
-                {% else %}bg-danger
-                {% endif %}">
-                {{ pct }}%
-              </span>
+            {% if c.3 >= 80 %}
+              <span class="badge bg-success">Alto</span>
+            {% elif c.3 >= 50 %}
+              <span class="badge bg-warning text-dark">Medio</span>
             {% else %}
-              <span class="badge bg-secondary">0%</span>
+              <span class="badge bg-danger">Bajo</span>
             {% endif %}
           </td>
 
         </tr>
-        {% endwith %}
         {% endfor %}
       </tbody>
     </table>
