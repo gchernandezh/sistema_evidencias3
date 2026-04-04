@@ -1475,7 +1475,7 @@ def coord_reportes_data():
 
                 req += 1
 
-                if entregado:
+                if entregado and estado != "DEVUELTO":
                     ent += 1
 
             # 🔢 cálculo
@@ -1580,7 +1580,7 @@ def coord_docente_detalle(request, docente_id):
         req, ent = row if row else (0, 0)
 
         cur.execute("""
-            SELECT r.obligatorio, e.id
+            SELECT r.obligatorio, e.id, e.estado
             FROM asignaciones a
             JOIN vw_entregas_requeridas_efectivas r 
                 ON r.curso_id = a.curso_id
@@ -1596,7 +1596,7 @@ def coord_docente_detalle(request, docente_id):
         req_real = 0
         ent_real = 0
 
-        for obligatorio, entregado in filas:
+        for obligatorio, entregado, estado in filas:
 
             # opcional NO entregado → no cuenta
             if not obligatorio and not entregado:
@@ -1604,7 +1604,7 @@ def coord_docente_detalle(request, docente_id):
 
             req_real += 1
 
-            if entregado:
+            if entregado and estado != "DEVUELTO":
                 ent_real += 1
         
         req = req_real
@@ -1668,7 +1668,7 @@ def coord_docente_detalle(request, docente_id):
 
                 req += 1
 
-                if entregado:
+                if entregado and estado != "DEVUELTO":
                     ent += 1
 
             pct = round((ent * 100) / req, 2) if req else 0
@@ -1691,7 +1691,7 @@ def coord_docente_detalle(request, docente_id):
                 AND e.tipo_id = t.id
                 AND e.docente_id = a.docente_id
             WHERE a.docente_id = %s
-            AND e.id IS NULL
+            AND (e.id IS NULL OR e.estado = 'DEVUELTO')
         """, [docente_id])
 
         pendientes_lista = cur.fetchall()
