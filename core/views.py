@@ -35,7 +35,8 @@ logger = logging.getLogger(__name__)
 # en core/views.py
 from core.drive_oauth import get_service, ensure_child_folder, upload_file, delete_file
 from django.http import JsonResponse
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 from django.http import HttpResponse
 from datetime import datetime
@@ -1694,14 +1695,35 @@ def descargar_pdf_docente(request, docente_id):
 
     with connection.cursor() as cur:
 
+        # 🔵 DOCENTE
         cur.execute("""
             SELECT nombre
             FROM docentes
             WHERE id = %s
         """, [docente_id])
-
         docente = cur.fetchone()[0]
 
+        # 🟢 RESUMEN
+        cur.execute("""
+            SELECT 
+                COUNT(DISTINCT r.curso_id || '-' || r.tipo_id),
+                COUNT(DISTINCT e.curso_id || '-' || e.tipo_id)
+            FROM asignaciones a
+            LEFT JOIN vw_entregas_requeridas_efectivas r 
+                ON r.curso_id = a.curso_id
+            LEFT JOIN entregas e 
+                ON e.curso_id = r.curso_id
+                AND e.tipo_id = r.tipo_id
+                AND e.docente_id = a.docente_id
+            WHERE a.docente_id = %s
+        """, [docente_id])
+
+        req, ent = cur.fetchone() or (0, 0)
+
+        porcentaje = round((ent * 100) / req, 2) if req else 0
+        pendientes = req - ent if req else 0
+
+        # 🔵 CURSOS
         cur.execute("""
             SELECT 
                 c.nombre || ' - Grupo ' || c.grupo,
@@ -1717,11 +1739,12 @@ def descargar_pdf_docente(request, docente_id):
                 AND e.docente_id = a.docente_id
             WHERE a.docente_id = %s
             GROUP BY c.nombre, c.grupo
+            ORDER BY c.nombre
         """, [docente_id])
 
         cursos = cur.fetchall()
 
-    # 📄 generar PDF
+    # 📄 PDF
     response = HttpResponse(content_type='application/pdf')
 
     fecha = datetime.now().strftime("%Y-%m-%d")
@@ -1734,16 +1757,43 @@ def descargar_pdf_docente(request, docente_id):
 
     elementos = []
 
-    elementos.append(Paragraph("ANÁLISIS DOCENTE", styles['Title']))
+    # 🔥 TÍTULO
+    elementos.append(Paragraph("ANÁLISIS DE CUMPLIMIENTO DOCENTE", styles['Title']))
     elementos.append(Spacer(1, 12))
 
-    elementos.append(Paragraph(f"Docente: {docente}", styles['Normal']))
+    elementos.append(Paragraph(f"<b>Docente:</b> {docente}", styles['Normal']))
     elementos.append(Spacer(1, 12))
+
+    # 🔥 KPIs
+    elementos.append(Paragraph(f"<b>Requeridas:</b> {req}", styles['Normal']))
+    elementos.append(Paragraph(f"<b>Entregadas:</b> {ent}", styles['Normal']))
+    elementos.append(Paragraph(f"<b>Pendientes:</b> {pendientes}", styles['Normal']))
+    elementos.append(Paragraph(f"<b>Cumplimiento:</b> {porcentaje}%", styles['Normal']))
+    elementos.append(Spacer(1, 20))
+
+    # 🔥 TABLA
+    data = [["Curso", "Requeridas", "Entregadas", "%"]]
 
     for c in cursos:
-        texto = f"{c[0]} → {c[2]}/{c[1]} entregados"
-        elementos.append(Paragraph(texto, styles['Normal']))
-        elementos.append(Spacer(1, 8))
+        curso = c[0]
+        r = c[1]
+        e = c[2]
+        pct = round((e * 100) / r, 2) if r else 0
+
+        data.append([curso, r, e, f"{pct}%"])
+
+    tabla = Table(data)
+
+    tabla.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.darkgreen),
+        ('TEXTCOLOR',(0,0),(-1,0),colors.white),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('ALIGN',(1,1),(-1,-1),'CENTER'),
+    ]))
+
+    elementos.append(Paragraph("Cumplimiento por Curso", styles['Heading2']))
+    elementos.append(Spacer(1, 10))
+    elementos.append(tabla)
 
     doc.build(elementos)
 

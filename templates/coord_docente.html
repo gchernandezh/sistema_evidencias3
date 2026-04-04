@@ -125,7 +125,9 @@
           <td>{{ c.2 }}</td>
 
           <!-- % SOLO UNA VEZ -->
-          <td>{{ c.3|floatformat:0 }}%</td>
+          <td><span class="badge bg-warning text-dark">
+                ⚠ {{ c.3|floatformat:0 }}%
+              </span></td>
 
           <!-- SEMÁFORO -->
           <td>
