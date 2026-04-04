@@ -1631,18 +1631,52 @@ def coord_docente_detalle(request, docente_id):
             GROUP BY c.nombre, c.grupo
         """, [docente_id])
 
+
         cursos_raw = cur.fetchall()
 
         cursos = []
+
         for row in cursos_raw:
-            nombre = row[0]
-            requeridas = row[1]
-            entregadas = row[2]
 
-            pct = round((entregadas * 100) / requeridas, 2) if requeridas else 0
-            cursos.append((nombre, requeridas, entregadas, pct))
+            curso = row[0]  # "Curso - Grupo X"
 
-        # pendientes simples
+            # 🔥 recalcular correctamente por curso (misma lógica global)
+            cur.execute("""
+                SELECT r.obligatorio, e.id
+                FROM asignaciones a
+                JOIN cursos c ON c.id = a.curso_id
+                JOIN vw_entregas_requeridas_efectivas r 
+                    ON r.curso_id = c.id
+                LEFT JOIN entregas e 
+                    ON e.curso_id = r.curso_id
+                    AND e.tipo_id = r.tipo_id
+                    AND e.docente_id = a.docente_id
+                WHERE a.docente_id = %s
+                AND (c.nombre || ' - Grupo ' || c.grupo) = %s
+            """, [docente_id, curso])
+
+            filas = cur.fetchall()
+
+            req = 0
+            ent = 0
+
+            for obligatorio, entregado in filas:
+
+                # 🔴 opcional no entregado → NO cuenta
+                if not obligatorio and not entregado:
+                    continue
+
+                req += 1
+
+                if entregado:
+                    ent += 1
+
+            pct = round((ent * 100) / req, 2) if req else 0
+
+            cursos.append((curso, req, ent, pct))
+
+
+        # 🔴 pendientes (NO TOCAR, ya está bien)
         cur.execute("""
             SELECT 
                 c.nombre || ' - Grupo ' || c.grupo,
@@ -1657,10 +1691,11 @@ def coord_docente_detalle(request, docente_id):
                 AND e.tipo_id = t.id
                 AND e.docente_id = a.docente_id
             WHERE a.docente_id = %s
-              AND e.id IS NULL
+            AND e.id IS NULL
         """, [docente_id])
 
         pendientes_lista = cur.fetchall()
+
 
         # tipos
         cur.execute("""
