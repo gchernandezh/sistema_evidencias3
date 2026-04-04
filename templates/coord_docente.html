@@ -97,7 +97,7 @@
   <div class="col-md-3">
     <div class="card text-bg-dark">
       <div class="card-body text-center">
-        <h6>Requeridas</h6>
+        <h6>Requeridas-curso</h6>
         <h3>{{ requeridas }}</h3>
       </div>
     </div>
@@ -106,7 +106,7 @@
   <div class="col-md-3">
     <div class="card text-bg-success">
       <div class="card-body text-center">
-        <h6>Entregadas</h6>
+        <h6>Entregadas-curso</h6>
         <h3>{{ entregadas }}</h3>
       </div>
     </div>
@@ -158,9 +158,15 @@
           <td>{{ c.2 }}</td>
 
           <!-- % SOLO UNA VEZ -->
-          <td><span class="badge bg-warning text-dark">
-                ⚠ {{ c.3|floatformat:0 }}%
-              </span></td>
+          <td>
+            <span class="badge 
+                {% if c.3 >= 80 %}bg-success
+                {% elif c.3 >= 50 %}bg-warning text-dark
+                {% else %}bg-danger
+                {% endif %}">
+                {{ c.3|floatformat:0 }}%
+            </span>
+          </td>
 
           <!-- SEMÁFORO -->
           <td>
