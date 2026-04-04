@@ -1431,69 +1431,80 @@ def reemplazar_entrega(request):
     })
 
 def coord_reportes_data():
+
     with connection.cursor() as cur:
+
+        # 🔵 traer docentes con asignaciones
         cur.execute("""
-            WITH requeridas AS (
-                SELECT 
-                    curso_id,
-                    tipo_id
-                FROM vw_entregas_requeridas_efectivas
-            ),
-            entregadas AS (
-                SELECT DISTINCT
-                    curso_id,
-                    tipo_id,
-                    docente_id
-                FROM entregas
-            ),
-            base AS (
-                SELECT 
-                    a.docente_id,
-                    COUNT(DISTINCT r.curso_id || '-' || r.tipo_id) AS requeridas,
-                    COUNT(DISTINCT e.curso_id || '-' || e.tipo_id) AS entregadas
-                FROM asignaciones a
-                LEFT JOIN requeridas r 
-                    ON r.curso_id = a.curso_id
-                LEFT JOIN entregadas e 
-                    ON e.curso_id = r.curso_id 
-                    AND e.tipo_id = r.tipo_id
-                    AND e.docente_id = a.docente_id
-                GROUP BY a.docente_id
-            )
-            SELECT 
-                d.id,
-                d.nombre,
-                COALESCE(b.entregadas,0) AS entregadas,
-                COALESCE(b.requeridas,0) AS requeridas
-            FROM base b
-            JOIN docentes d ON d.id = b.docente_id
-            ORDER BY 
-                (COALESCE(b.entregadas,0) * 1.0 / NULLIF(b.requeridas,0)) DESC NULLS LAST
+            SELECT DISTINCT d.id, d.nombre
+            FROM asignaciones a
+            JOIN docentes d ON d.id = a.docente_id
         """)
 
-        columnas = [col[0] for col in cur.description]
-        data = [dict(zip(columnas, fila)) for fila in cur.fetchall()]
+        docentes = cur.fetchall()
 
-    # 🔥 cálculo en Python (seguro)
-    for d in data:
-        req = d["requeridas"] or 0
-        ent = d["entregadas"] or 0
+    reporte = []
 
-        if req > 0:
-            porcentaje = round((ent * 100) / req, 2)
-        else:
-            porcentaje = 0
+    with connection.cursor() as cur:
 
-        d["porcentaje"] = porcentaje
+        for docente_id, nombre in docentes:
 
-        if porcentaje >= 80:
-            d["semaforo"] = "VERDE"
-        elif porcentaje >= 50:
-            d["semaforo"] = "AMARILLO"
-        else:
-            d["semaforo"] = "ROJO"
+            # 🔥 lógica REAL (misma del análisis)
+            cur.execute("""
+                SELECT r.obligatorio, e.id
+                FROM asignaciones a
+                JOIN vw_entregas_requeridas_efectivas r 
+                    ON r.curso_id = a.curso_id
+                LEFT JOIN entregas e 
+                    ON e.curso_id = r.curso_id
+                    AND e.tipo_id = r.tipo_id
+                    AND e.docente_id = a.docente_id
+                WHERE a.docente_id = %s
+            """, [docente_id])
 
-    return data
+            filas = cur.fetchall()
+
+            req = 0
+            ent = 0
+
+            for obligatorio, entregado in filas:
+
+                # 🔴 opcional no entregado → NO cuenta
+                if not obligatorio and not entregado:
+                    continue
+
+                req += 1
+
+                if entregado:
+                    ent += 1
+
+            # 🔢 cálculo
+            if req > 0:
+                porcentaje = round((ent * 100) / req, 2)
+            else:
+                porcentaje = 0
+
+            # 🚦 semáforo
+            if porcentaje >= 80:
+                semaforo = "VERDE"
+            elif porcentaje >= 50:
+                semaforo = "AMARILLO"
+            else:
+                semaforo = "ROJO"
+
+            reporte.append({
+                "id": docente_id,
+                "nombre": nombre,
+                "entregadas": ent,
+                "requeridas": req,
+                "porcentaje": porcentaje,
+                "semaforo": semaforo
+            })
+
+    # 🔥 ordenar por porcentaje (top → bottom)
+    reporte.sort(key=lambda x: x["porcentaje"], reverse=True)
+
+    return reporte
 
 def coord_revision_data():
     with connection.cursor() as cur:
