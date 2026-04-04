@@ -20,42 +20,28 @@
     @media print {
 
       body {
-        font-family: Arial, sans-serif;
+        background: white !important;
       }
 
-      h1, h2 {
-        text-align: center;
+      .no-print {
+        display: none !important;
+      }
+
+      .btn {
+        display: none !important;
       }
 
       .card {
+        box-shadow: none !important;
         border: 1px solid #ccc !important;
-        margin-bottom: 15px;
       }
 
-      .badge {
-        font-size: 12px;
-        padding: 4px 6px;
-      }
-
-      table {
-        width: 100%;
-        border-collapse: collapse;
-      }
-
-      th {
-        background-color: #0b3a2a !important;
-        color: white !important;
-      }
-
-      td, th {
-        border: 1px solid #999;
-        padding: 6px;
-        text-align: center;
+      .container {
+        width: 100% !important;
+        max-width: 100% !important;
       }
 
     }
-
-
   </style>
 </head>
 {% load static %}
