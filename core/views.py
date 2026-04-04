@@ -1451,7 +1451,7 @@ def coord_reportes_data():
 
             # 🔥 lógica REAL (misma del análisis)
             cur.execute("""
-                SELECT r.obligatorio, e.id
+                SELECT r.obligatorio, e.id, e.estado
                 FROM asignaciones a
                 JOIN vw_entregas_requeridas_efectivas r 
                     ON r.curso_id = a.curso_id
@@ -1467,7 +1467,7 @@ def coord_reportes_data():
             req = 0
             ent = 0
 
-            for obligatorio, entregado in filas:
+            for obligatorio, entregado, estado in filas:
 
                 # 🔴 opcional no entregado → NO cuenta
                 if not obligatorio and not entregado:
@@ -1642,7 +1642,7 @@ def coord_docente_detalle(request, docente_id):
 
             # 🔥 recalcular correctamente por curso (misma lógica global)
             cur.execute("""
-                SELECT r.obligatorio, e.id
+                for obligatorio, entregado, estado in filas:
                 FROM asignaciones a
                 JOIN cursos c ON c.id = a.curso_id
                 JOIN vw_entregas_requeridas_efectivas r 
@@ -1660,7 +1660,7 @@ def coord_docente_detalle(request, docente_id):
             req = 0
             ent = 0
 
-            for obligatorio, entregado in filas:
+            for obligatorio, entregado, estado in filas:
 
                 # 🔴 opcional no entregado → NO cuenta
                 if not obligatorio and not entregado:
