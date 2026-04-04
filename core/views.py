@@ -1642,7 +1642,7 @@ def coord_docente_detalle(request, docente_id):
 
             # 🔥 recalcular correctamente por curso (misma lógica global)
             cur.execute("""
-                for obligatorio, entregado, estado in filas:
+                SELECT r.obligatorio, e.id, e.estado
                 FROM asignaciones a
                 JOIN cursos c ON c.id = a.curso_id
                 JOIN vw_entregas_requeridas_efectivas r 
