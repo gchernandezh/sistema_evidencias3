@@ -1692,15 +1692,44 @@ def coord_docente_detalle(request, docente_id):
 
 def descargar_pdf_docente(request, docente_id):
 
+    with connection.cursor() as cur:
+
+        cur.execute("""
+            SELECT nombre
+            FROM docentes
+            WHERE id = %s
+        """, [docente_id])
+
+        docente = cur.fetchone()[0]
+
+        cur.execute("""
+            SELECT 
+                c.nombre || ' - Grupo ' || c.grupo,
+                COUNT(DISTINCT r.tipo_id),
+                COUNT(DISTINCT e.tipo_id)
+            FROM asignaciones a
+            JOIN cursos c ON c.id = a.curso_id
+            LEFT JOIN vw_entregas_requeridas_efectivas r 
+                ON r.curso_id = c.id
+            LEFT JOIN entregas e 
+                ON e.curso_id = c.id 
+                AND e.tipo_id = r.tipo_id
+                AND e.docente_id = a.docente_id
+            WHERE a.docente_id = %s
+            GROUP BY c.nombre, c.grupo
+        """, [docente_id])
+
+        cursos = cur.fetchall()
+
+    # 📄 generar PDF
     response = HttpResponse(content_type='application/pdf')
 
     fecha = datetime.now().strftime("%Y-%m-%d")
+    nombre_archivo = f"{docente}_{fecha}.pdf".replace(" ", "_")
 
-    filename = f"docente_{docente_id}_{fecha}.pdf"
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    response['Content-Disposition'] = f'attachment; filename="{nombre_archivo}"'
 
     doc = SimpleDocTemplate(response)
-
     styles = getSampleStyleSheet()
 
     elementos = []
@@ -1708,10 +1737,13 @@ def descargar_pdf_docente(request, docente_id):
     elementos.append(Paragraph("ANÁLISIS DOCENTE", styles['Title']))
     elementos.append(Spacer(1, 12))
 
-    elementos.append(Paragraph(f"Docente ID: {docente_id}", styles['Normal']))
+    elementos.append(Paragraph(f"Docente: {docente}", styles['Normal']))
     elementos.append(Spacer(1, 12))
 
-    # puedes agregar más datos aquí después
+    for c in cursos:
+        texto = f"{c[0]} → {c[2]}/{c[1]} entregados"
+        elementos.append(Paragraph(texto, styles['Normal']))
+        elementos.append(Spacer(1, 8))
 
     doc.build(elementos)
 

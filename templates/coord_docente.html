@@ -169,6 +169,7 @@
     <table class="table table-bordered table-sm">
       <thead>
         <tr>
+          <th>Curso</th>
           <th>Tipo</th>
           <th>Estado</th>
         </tr>
@@ -179,15 +180,9 @@
         <tr>
           <td>{{ t.0 }}</td>  <!-- curso + grupo -->
           <td>{{ t.1 }}</td>  <!-- tipo -->
+
           <td>
             {% if t.2 == "ENTREGADO" %}
-              <span class="badge bg-success">✔</span>
-            {% else %}
-              <span class="badge bg-danger">✖</span>
-            {% endif %}
-          </td>
-          <td>
-            {% if t.1 == "ENTREGADO" %}
               <span class="badge bg-success">✔ Entregado</span>
             {% else %}
               <span class="badge bg-danger">✖ Pendiente</span>
