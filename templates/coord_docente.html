@@ -27,6 +27,9 @@
   <a href="/coord/?tab=reportes" class="btn btn-outline-secondary">
     ← Volver a Reportes
   </a>
+  <a href="/coord/docente/pdf/{{ docente_id }}/" class="btn btn-danger">
+    📄 Descargar PDF
+  </a>
 </div>
 
 <!-- 🔵 CABECERA -->
@@ -174,7 +177,15 @@
       <tbody>
         {% for t in tipos %}
         <tr>
-          <td>{{ t.0 }}</td>
+          <td>{{ t.0 }}</td>  <!-- curso + grupo -->
+          <td>{{ t.1 }}</td>  <!-- tipo -->
+          <td>
+            {% if t.2 == "ENTREGADO" %}
+              <span class="badge bg-success">✔</span>
+            {% else %}
+              <span class="badge bg-danger">✖</span>
+            {% endif %}
+          </td>
           <td>
             {% if t.1 == "ENTREGADO" %}
               <span class="badge bg-success">✔ Entregado</span>

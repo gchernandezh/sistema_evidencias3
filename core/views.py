@@ -35,6 +35,10 @@ logger = logging.getLogger(__name__)
 # en core/views.py
 from core.drive_oauth import get_service, ensure_child_folder, upload_file, delete_file
 from django.http import JsonResponse
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from django.http import HttpResponse
+from datetime import datetime
 
 
 TOKEN_MAX_AGE = 15 * 60  # 15 mins
@@ -1599,10 +1603,10 @@ def coord_docente_detalle(request, docente_id):
 
         # por curso
         cur.execute("""
-            SELECT 
-                c.nombre,
-                COUNT(DISTINCT r.tipo_id),
-                COUNT(DISTINCT e.tipo_id)
+        SELECT 
+            c.nombre || ' - Grupo ' || c.grupo,
+            COUNT(DISTINCT r.tipo_id),
+            COUNT(DISTINCT e.tipo_id)
             FROM asignaciones a
             JOIN cursos c ON c.id = a.curso_id
             LEFT JOIN vw_entregas_requeridas_efectivas r 
@@ -1648,23 +1652,26 @@ def coord_docente_detalle(request, docente_id):
 
         # tipos
         cur.execute("""
-            SELECT 
-                t.nombre,
-                CASE 
-                    WHEN COUNT(e.id) > 0 THEN 'ENTREGADO'
-                    ELSE 'PENDIENTE'
-                END
-            FROM asignaciones a
-            JOIN vw_entregas_requeridas_efectivas r 
-                ON r.curso_id = a.curso_id
-            JOIN tipos_entregable t 
-                ON t.id = r.tipo_id
-            LEFT JOIN entregas e 
-                ON e.curso_id = r.curso_id 
-                AND e.tipo_id = r.tipo_id
-                AND e.docente_id = a.docente_id
-            WHERE a.docente_id = %s
-            GROUP BY t.nombre
+        SELECT 
+            c.nombre || ' - Grupo ' || c.grupo,
+            t.nombre,
+            CASE 
+                WHEN COUNT(e.id) > 0 THEN 'ENTREGADO'
+                ELSE 'PENDIENTE'
+            END
+        FROM asignaciones a
+        JOIN cursos c ON c.id = a.curso_id
+        JOIN vw_entregas_requeridas_efectivas r 
+            ON r.curso_id = a.curso_id
+        JOIN tipos_entregable t 
+            ON t.id = r.tipo_id
+        LEFT JOIN entregas e 
+            ON e.curso_id = r.curso_id 
+            AND e.tipo_id = r.tipo_id
+            AND e.docente_id = a.docente_id
+        WHERE a.docente_id = %s
+        GROUP BY c.nombre, c.grupo, t.nombre
+        ORDER BY c.nombre, t.nombre
         """, [docente_id])
 
         tipos = cur.fetchall()
@@ -1677,5 +1684,35 @@ def coord_docente_detalle(request, docente_id):
         "pendientes_total": pendientes_total,
         "cursos": cursos,
         "pendientes": pendientes_lista,
-        "tipos": tipos
+        "tipos": tipos,
+        "docente_id": docente_id
     })
+
+
+
+def descargar_pdf_docente(request, docente_id):
+
+    response = HttpResponse(content_type='application/pdf')
+
+    fecha = datetime.now().strftime("%Y-%m-%d")
+
+    filename = f"docente_{docente_id}_{fecha}.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    doc = SimpleDocTemplate(response)
+
+    styles = getSampleStyleSheet()
+
+    elementos = []
+
+    elementos.append(Paragraph("ANÁLISIS DOCENTE", styles['Title']))
+    elementos.append(Spacer(1, 12))
+
+    elementos.append(Paragraph(f"Docente ID: {docente_id}", styles['Normal']))
+    elementos.append(Spacer(1, 12))
+
+    # puedes agregar más datos aquí después
+
+    doc.build(elementos)
+
+    return response
