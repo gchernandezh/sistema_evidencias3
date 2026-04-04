@@ -1616,7 +1616,7 @@ def coord_docente_detalle(request, docente_id):
                 AND e.tipo_id = r.tipo_id
                 AND e.docente_id = a.docente_id
             WHERE a.docente_id = %s
-            GROUP BY c.nombre
+            GROUP BY c.nombre, c.grupo
         """, [docente_id])
 
         cursos_raw = cur.fetchall()
