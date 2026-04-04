@@ -17,30 +17,40 @@
     .navbar .navbar-brand, .navbar .nav-link{ color:#fff !important; }
 
 
-
-
     @media print {
 
       body {
-        background: white !important;
+        font-family: Arial, sans-serif;
       }
 
-      .no-print {
-        display: none !important;
-      }
-
-      .btn {
-        display: none !important;
+      h1, h2 {
+        text-align: center;
       }
 
       .card {
-        box-shadow: none !important;
         border: 1px solid #ccc !important;
+        margin-bottom: 15px;
       }
 
-      .container {
-        width: 100% !important;
-        max-width: 100% !important;
+      .badge {
+        font-size: 12px;
+        padding: 4px 6px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th {
+        background-color: #0b3a2a !important;
+        color: white !important;
+      }
+
+      td, th {
+        border: 1px solid #999;
+        padding: 6px;
+        text-align: center;
       }
 
     }
@@ -61,6 +71,12 @@
   <button onclick="window.print()" class="btn btn-danger no-print">
     📄 Descargar PDF
   </button>
+</div>
+<div class="alert alert-info no-print" id="nombre-archivo">
+  Nombre sugerido: <b id="nombre_pdf"></b>
+  <button onclick="copiarNombre()" class="btn btn-sm btn-outline-primary no-print">
+  Copiar nombre
+</button>
 </div>
 
 <!-- 🔵 CABECERA -->
@@ -267,5 +283,20 @@
 </div>
 
 </div>
+<script>
+  const docente = "{{ docente|escapejs }}"
+  const fecha = new Date().toISOString().slice(0,10)
+
+  const nombre = docente.replaceAll(" ", "_") + "_" + fecha + ".pdf"
+
+  document.getElementById("nombre_pdf").innerText = nombre
+</script>
+<script>
+function copiarNombre() {
+  const texto = document.getElementById("nombre_pdf").innerText
+  navigator.clipboard.writeText(texto)
+  alert("Nombre copiado 👍")
+}
+</script>
 </body>
 </html>
