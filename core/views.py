@@ -1530,20 +1530,20 @@ def coord_revision_data():
     
 @require_POST
 def cambiar_estado_entrega(request):
-    if not _require_coordinator(request):
-        return HttpResponseForbidden("No autorizado")
 
     entrega_id = request.POST.get("entrega_id")
     estado = request.POST.get("estado")
 
-    if estado not in ["EN_REVISION", "REVISADO", "APROBADO"]:
-        return JsonResponse({"error": "Estado inválido"}, status=400)
+    if not entrega_id or not estado:
+        return JsonResponse({"success": False}, status=400)
+
+    if estado not in ["EN_REVISION", "APROBADO", "DEVUELTO"]:
+        return JsonResponse({"success": False}, status=400)
 
     with connection.cursor() as cur:
         cur.execute("""
             UPDATE entregas
-            SET estado = %s,
-                updated_at = NOW()
+            SET estado = %s
             WHERE id = %s
         """, [estado, entrega_id])
 

@@ -327,7 +327,10 @@ document.addEventListener("DOMContentLoaded", function(){
         },
         body: `entrega_id=${this.dataset.id}&estado=${this.value}`
       })
-      .then(res => res.json())
+      .then(res => {
+          if (!res.ok) throw new Error()
+          return res.json()
+        })
       .then(data => {
 
         if(data.success){
