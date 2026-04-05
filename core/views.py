@@ -287,6 +287,12 @@ def docente_dashboard(request):
     """, [docente_id])
     base_filas = list(pendientes_qs)
 
+    # 🔥 FILTRO CORRECTO DE PENDIENTES
+    base_filas = [
+        f for f in base_filas
+        if getattr(f, "estado_actual", "PENDIENTE") in ["PENDIENTE", "DEVUELTO"]
+    ]
+
     # 2) Recolectar cursos y tipos PIAR presentes
     cursos_piar = {f.curso_id for f in base_filas if getattr(f, "es_piar", False)}
     tipos_piar  = {f.tipo_id  for f in base_filas if getattr(f, "es_piar", False)}
