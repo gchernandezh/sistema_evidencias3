@@ -1549,51 +1549,56 @@ def cambiar_estado_entrega(request):
         return JsonResponse({"success": False}, status=400)
 
     with connection.cursor() as cur:
+
+        # 🔥 1. ACTUALIZAR
         cur.execute("""
-        UPDATE entregas
-        SET estado = %s,
-            observacion_revision = %s
-        WHERE id = %s
-    """, [estado, observacion, entrega_id])
-        
-    # 🔥 SI ES DEVUELTO → enviar correo
-    if estado == "DEVUELTO":
+            UPDATE entregas
+            SET estado = %s,
+                observacion_revision = %s
+            WHERE id = %s
+        """, [estado, observacion, entrega_id])
 
-        cur.execute("""
-            SELECT d.email, d.nombre, t.nombre
-            FROM entregas e
-            JOIN docentes d ON d.id = e.docente_id
-            JOIN tipos_entregable t ON t.id = e.tipo_id
-            WHERE e.id = %s
-        """, [entrega_id])
+        # 🔥 2. SI ES DEVUELTO → TRAER DATOS + CORREO
+        if estado == "DEVUELTO":
 
-        result = cur.fetchone()
+            cur.execute("""
+                SELECT d.email, d.nombre, t.nombre
+                FROM entregas e
+                JOIN docentes d ON d.id = e.docente_id
+                JOIN tipos_entregable t ON t.id = e.tipo_id
+                WHERE e.id = %s
+            """, [entrega_id])
 
-        if result:
-            email_docente, nombre_docente, tipo = result
+            result = cur.fetchone()
 
-            asunto = "Entregable devuelto"
+            if result:
+                email_docente, nombre_docente, tipo = result
 
-            mensaje = f"""
-    Hola {nombre_docente},
+                asunto = "Entregable devuelto"
 
-    Su entregable "{tipo}" ha sido devuelto.
+                mensaje = f"""
+Cordial saludo {nombre_docente},
 
-    Observación:
-    {observacion}
+Su entregable "{tipo}" ha sido devuelto.
 
-    Por favor revise y corrija.
+Observación:
+{observacion}
 
-    Sistema de Evidencias
-    """
+Por favor revise y corrija.
 
-            send_mail(
-                asunto,
-                mensaje,
-                settings.EMAIL_HOST_USER,
-                [email_docente],
-                fail_silently=True,
-            )
+Coordinación de Área - Programa de Ingeniería de Sistemas.
+"""
+
+                try:
+                    send_mail(
+                        asunto,
+                        mensaje,
+                        settings.EMAIL_HOST_USER,
+                        [email_docente],
+                        fail_silently=True,
+                    )
+                except Exception as e:
+                    print("Error enviando correo:", e)
 
     return JsonResponse({"success": True})
 
