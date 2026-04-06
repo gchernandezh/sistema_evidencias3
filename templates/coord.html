@@ -319,13 +319,29 @@ document.addEventListener("DOMContentLoaded", function(){
 
       const csrftoken = getCookie("csrftoken");
 
+      let estado = this.value;
+      let entrega_id = this.dataset.id;
+
+      let observacion = "";
+
+      // 🔥 SOLO SI ES DEVUELTO
+      if (estado === "DEVUELTO") {
+        observacion = prompt("Escribe la observación de devolución:");
+
+        // 🚨 si cancela o deja vacío → detener
+        if (!observacion) {
+          alert("Debes escribir una observación");
+          return;
+        }
+      }
+
       fetch("/coord/cambiar-estado/", {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
           "X-CSRFToken": csrftoken
         },
-        body: `entrega_id=${this.dataset.id}&estado=${this.value}`
+        body: `entrega_id=${entrega_id}&estado=${estado}&observacion=${encodeURIComponent(observacion)}`
       })
       .then(res => {
           if (!res.ok) throw new Error()
