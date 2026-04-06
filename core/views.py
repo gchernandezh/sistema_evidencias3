@@ -1539,6 +1539,7 @@ def cambiar_estado_entrega(request):
 
     entrega_id = request.POST.get("entrega_id")
     estado = request.POST.get("estado")
+    observacion = request.POST.get("observacion")
 
     if not entrega_id or not estado:
         return JsonResponse({"success": False}, status=400)
@@ -1548,10 +1549,11 @@ def cambiar_estado_entrega(request):
 
     with connection.cursor() as cur:
         cur.execute("""
-            UPDATE entregas
-            SET estado = %s
-            WHERE id = %s
-        """, [estado, entrega_id])
+        UPDATE entregas
+        SET estado = %s,
+            observacion_revision = %s
+        WHERE id = %s
+    """, [estado, observacion, entrega_id])
 
     return JsonResponse({"success": True})
 
