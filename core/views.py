@@ -40,6 +40,7 @@ from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 from django.http import HttpResponse
 from datetime import datetime
+from django.core.mail import send_mail
 
 
 TOKEN_MAX_AGE = 15 * 60  # 15 mins
@@ -1554,6 +1555,45 @@ def cambiar_estado_entrega(request):
             observacion_revision = %s
         WHERE id = %s
     """, [estado, observacion, entrega_id])
+        
+    # 🔥 SI ES DEVUELTO → enviar correo
+    if estado == "DEVUELTO":
+
+        cur.execute("""
+            SELECT d.email, d.nombre, t.nombre
+            FROM entregas e
+            JOIN docentes d ON d.id = e.docente_id
+            JOIN tipos_entregable t ON t.id = e.tipo_id
+            WHERE e.id = %s
+        """, [entrega_id])
+
+        result = cur.fetchone()
+
+        if result:
+            email_docente, nombre_docente, tipo = result
+
+            asunto = "Entregable devuelto"
+
+            mensaje = f"""
+    Hola {nombre_docente},
+
+    Su entregable "{tipo}" ha sido devuelto.
+
+    Observación:
+    {observacion}
+
+    Por favor revise y corrija.
+
+    Sistema de Evidencias
+    """
+
+            send_mail(
+                asunto,
+                mensaje,
+                settings.EMAIL_HOST_USER,
+                [email_docente],
+                fail_silently=True,
+            )
 
     return JsonResponse({"success": True})
 
