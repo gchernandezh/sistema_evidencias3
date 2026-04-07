@@ -1559,6 +1559,7 @@ def cambiar_estado_entrega(request):
         """, [estado, observacion, entrega_id])
 
         # 🔥 2. SI ES DEVUELTO → TRAER DATOS + CORREO
+        
         if estado == "DEVUELTO":
 
             cur.execute("""
@@ -1574,33 +1575,44 @@ def cambiar_estado_entrega(request):
             if result:
                 email_docente, nombre_docente, tipo = result
 
-                asunto = "Entregable devuelto"
+                url = "https://api.brevo.com/v3/smtp/email"
 
-                mensaje = f"""
-Cordial saludo {nombre_docente},
+                payload = {
+                    "sender": {
+                        "email": os.environ.get("BREVO_USER"),
+                        "name": "Sistema Evidencias"
+                    },
+                    "to": [
+                        {
+                            "email": email_docente,
+                            "name": nombre_docente
+                        }
+                    ],
+                    "subject": "Entregable devuelto",
+                    "textContent": f"""
+        Cordial saludo {nombre_docente},
 
-Su entregable "{tipo}" ha sido devuelto.
+        Su entregable "{tipo}" ha sido devuelto.
 
-Observación:
-{observacion}
+        Observación:
+        {observacion}
 
-Por favor revise y corrija.
+        Por favor revise y corrija.
 
-Coordinación de Área - Programa de Ingeniería de Sistemas.
-"""
+        Coordinación de Área - Programa de Ingeniería de Sistemas.
+        """
+                }
+
+                headers = {
+                    "accept": "application/json",
+                    "api-key": os.environ.get("BREVO_API_KEY"),
+                    "content-type": "application/json"
+                }
 
                 try:
-                    send_mail(
-                        asunto,
-                        mensaje,
-                        settings.EMAIL_HOST_USER,
-                        [email_docente],
-                        fail_silently=True,
-                    )
+                    requests.post(url, json=payload, headers=headers)
                 except Exception as e:
                     print("Error enviando correo:", e)
-
-    return JsonResponse({"success": True})
 
 def coord_docente_detalle(request, docente_id):
 
