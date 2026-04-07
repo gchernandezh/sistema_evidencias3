@@ -294,17 +294,18 @@ def docente_dashboard(request):
 
     with connection.cursor() as cur:
         cur.execute("""
-            SELECT curso_id, tipo_id, docente_id, observacion_revision
+            SELECT DISTINCT ON (curso_id, tipo_id)
+                curso_id,
+                tipo_id,
+                observacion_revision
             FROM entregas
             WHERE docente_id = %s
             AND observacion_revision IS NOT NULL
-            ORDER BY created_at DESC
+            ORDER BY curso_id, tipo_id, created_at DESC
         """, [docente_id])
 
-        for curso_id, tipo_id, docente_id_q, obs in cur.fetchall():
-            key = (curso_id, tipo_id, docente_id_q)
-            if key not in observaciones:  # 👈 solo la última
-                observaciones[key] = obs
+        for curso_id, tipo_id, obs in cur.fetchall():
+            observaciones[(curso_id, tipo_id)] = obs
 
 
 
@@ -372,7 +373,7 @@ def docente_dashboard(request):
                 g.es_multiple = True
                 g.estado_actual = estado_ult.get((f.curso_id, f.tipo_id, est["id"]), "PENDIENTE")
                 g.observacion_revision = observaciones.get(
-                    (g.curso_id, g.tipo_id, docente_id),
+                    (g.curso_id, g.tipo_id),
                     None
                 )
                 filas_expandidas.append(g)
@@ -381,7 +382,7 @@ def docente_dashboard(request):
             f.estudiante_nombre = ""
             f.es_multiple = False
             f.observacion_revision = observaciones.get(
-                (f.curso_id, f.tipo_id, docente_id),
+                (f.curso_id, f.tipo_id),
                 None
             )
             filas_expandidas.append(f)
