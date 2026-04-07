@@ -261,7 +261,7 @@ def docente_dashboard(request):
 
     # 1) Trae requeridos + flags (PIAR/obligatorio)
     pendientes_qs = VwPendientes.objects.raw("""
-    SELECT
+    SELECT DISTINCT ON (p.curso_id, p.tipo_id, p.docente_id)
         row_number() OVER () AS id,
         p.*,
 
@@ -271,6 +271,7 @@ def docente_dashboard(request):
             WHERE e.curso_id = p.curso_id
             AND e.tipo_id = p.tipo_id
             AND e.docente_id = p.docente_id
+            AND e.observacion_revision IS NOT NULL
             ORDER BY e.created_at DESC
             LIMIT 1
         ) AS observacion_revision,
@@ -297,7 +298,7 @@ def docente_dashboard(request):
         OR ec.id IS NULL
     )
     AND p.semestre = (SELECT MAX(semestre) FROM reglas_entregas)
-    ORDER BY p.tipo_nombre, p.fecha_limite ASC, p.curso_nombre
+    ORDER BY p.curso_id, p.tipo_id, p.docente_id, p.fecha_limite ASC
     """, [docente_id])
     base_filas = list(pendientes_qs)
 
