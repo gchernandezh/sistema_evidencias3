@@ -262,7 +262,7 @@ def docente_dashboard(request):
     # 1) Trae requeridos + flags (PIAR/obligatorio)
     pendientes_qs = VwPendientes.objects.raw("""
     SELECT (p.curso_id, p.tipo_id, p.docente_id)
-        row_number() OVER () AS id,
+        p.curso_id AS id,
         p.*,
 
         (
