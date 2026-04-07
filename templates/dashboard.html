@@ -168,6 +168,7 @@
                                   {% endif %}
                                 </td>
                                 <td class="text-center file-cell">
+
                                   {% if p.file_url %}
                                     <div class="mb-2">
                                       <a href="{{ p.file_url }}" target="_blank" class="btn btn-sm btn-outline-success">
@@ -175,36 +176,49 @@
                                       </a>
                                     </div>
                                   {% endif %}
-                                  <form method="post" action="{% url 'subir_entrega' %}" enctype="multipart/form-data"
-                                    class="d-flex flex-wrap gap-2 justify-content-end upload-form">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="curso_id" value="{{ p.curso_id }}">
-                                    <input type="hidden" name="tipo_id" value="{{ p.tipo_id }}">
-                                    {% if p.es_piar %}
-                                      <input type="hidden" name="estudiante_id" value="{{ p.estudiante_id }}">
+
+                                  {% if p.estado_actual == "DEVUELTO" %}
+
+                                    <div class="text-danger small mt-2">
+                                      Este entregable fue devuelto. Corrígelo desde la pestaña 
+                                      <strong>“Visualización y correcciones”</strong>.
+                                    </div>
+
+                                    {% if p.observacion_revision %}
+                                      <div class="alert alert-warning mt-2 p-2">
+                                        <strong>Observación del coordinador:</strong><br>
+                                        {{ p.observacion_revision }}
+                                      </div>
                                     {% endif %}
 
-                                    {% if p.tipo_codigo == "ASESORIA" %}
-                                      <input class="form-control form-control-sm" type="file" name="archivos"
-                                            multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" required>
-                                    {% else %}
-                                      <input class="form-control form-control-sm" type="file" name="archivo"
-                                            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" required>
-                                    {% endif %}
+                                  {% else %}
 
-                                    {% with code=p.tipo_codigo|default_if_none:""|upper name=p.tipo_nombre|default_if_none:""|lower %}
-                                      {% if code == "PLAN_AULA" or "plan" in name and "aula" in name %}
-                                        <input class="form-control form-control-sm"
-                                               type="text"
-                                               name="comentario"
-                                               placeholder="Describa la actualización realizada al plan de aula (opcional)">
+                                    <!-- FORMULARIO NORMAL -->
+                                    <form method="post" action="{% url 'subir_entrega' %}" enctype="multipart/form-data"
+                                          class="d-flex flex-wrap gap-2 justify-content-end upload-form">
+
+                                      {% csrf_token %}
+
+                                      <input type="hidden" name="curso_id" value="{{ p.curso_id }}">
+                                      <input type="hidden" name="tipo_id" value="{{ p.tipo_id }}">
+
+                                      {% if p.es_piar %}
+                                        <input type="hidden" name="estudiante_id" value="{{ p.estudiante_id }}">
                                       {% endif %}
-                                    {% endwith %}
 
-                                    <button type="submit" class="btn btn-sm btn-primary">
-                                      {% if p.file_url %}🔄 Reemplazar{% else %}📤 Subir{% endif %}
-                                    </button>
-                                  </form>
+                                      <input class="form-control form-control-sm"
+                                            type="file"
+                                            name="archivo"
+                                            required>
+
+                                      <button type="submit" class="btn btn-sm btn-primary">
+                                        {% if p.file_url %}🔄 Reemplazar{% else %}📤 Subir{% endif %}
+                                      </button>
+
+                                    </form>
+
+                                  {% endif %}
+
                                 </td>
                               </tr>
                             {% endfor %}
