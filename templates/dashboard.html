@@ -168,7 +168,7 @@
 
                                     <div class="text-danger small mt-2">
                                       Este entregable fue devuelto. Revisa las observaciones del coordinador y corrígelo desde la pestaña 
-                                      <strong>“Visualización y correcciones”</strong>.
+                                      <strong>“Visualización y Actualizaciones”</strong>.
                                     </div>
 
                                     {% if p.observacion_revision %}
@@ -190,6 +190,7 @@
                                       </a>
                                     </div>
                                   {% endif %}
+                                  {% if p.estado_actual == "PENDIENTE" %}
                                   <form method="post" action="{% url 'subir_entrega' %}" enctype="multipart/form-data"
                                     class="d-flex flex-wrap gap-2 justify-content-end upload-form">
                                     {% csrf_token %}
@@ -220,6 +221,7 @@
                                       {% if p.file_url %}🔄 Reemplazar{% else %}📤 Subir{% endif %}
                                     </button>
                                   </form>
+                                  {% endif %}
                                 </td>
                               </tr>
                             {% endfor %}
