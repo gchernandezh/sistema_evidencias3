@@ -1623,6 +1623,9 @@ def cambiar_estado_entrega(request):
                 except Exception as e:
                     print("Error enviando correo:", e)
 
+            # 🔥 ESTO ES LO QUE TE FALTABA
+        return JsonResponse({"success": True})
+
 def coord_docente_detalle(request, docente_id):
 
     with connection.cursor() as cur:
