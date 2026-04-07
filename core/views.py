@@ -384,10 +384,24 @@ def docente_dashboard(request):
 
     # 7) Agrupar por tipo
     def agrupar_por_tipo(items):
-        ordenados = sorted(items, key=lambda x: (x.tipo_nombre.lower(), x.curso_nombre, x.grupo, x.estudiante_nombre))
+        ordenados = sorted(
+            items,
+            key=lambda x: (
+                x.tipo_nombre.lower(),
+                x.curso_nombre,
+                x.grupo,
+                x.estudiante_nombre
+            )
+        )
+
         grupos = []
+
         for tipo, group in groupby(ordenados, key=lambda x: x.tipo_nombre):
-            grupos.append({"tipo": tipo, "items": list(group)})
+            grupos.append({
+                "tipo": tipo,
+                "filas": list(group)  # 🔥 CAMBIO AQUÍ
+            })
+
         return grupos
 
     # === Historial / Estado de mis entregas (semestre actual) ===
