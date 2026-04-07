@@ -754,7 +754,7 @@ def coord_panel(request):
     docentes_filtro = sorted(set([e["docente"] for e in revision_data]))
     cursos_filtro = sorted(set([e["curso"] for e in revision_data]))
     tipos_filtro = sorted(set([e["tipo"] for e in revision_data]))
-    estados_filtro = ["EN_REVISION", "REVISADO", "APROBADO"]
+    estados_filtro = ["EN_REVISION", "DEVUELTO", "APROBADO"]
 
     ctx["docentes_filtro"] = docentes_filtro
     ctx["cursos_filtro"] = cursos_filtro
@@ -1589,6 +1589,12 @@ def cambiar_estado_entrega(request):
                             "name": nombre_docente
                         }
                     ],
+                    "cc": [  # 🔥 AQUÍ
+                        {
+                            "email": "coordareaingenieriasistemas@cecar.edu.co",
+                            "name": "Coordinación de Área Ingeniería de Sistemas"
+                        }
+                    ],
                     "subject": "Entregable devuelto",
                     "textContent": f"""Cordial saludo {nombre_docente},
 
@@ -1597,7 +1603,7 @@ def cambiar_estado_entrega(request):
         Observación:
         {observacion}
 
-        Por favor revise y corrija.
+        Por favor revise y ajuste.
 
         Coordinación de Área - Programa de Ingeniería de Sistemas.
         """
