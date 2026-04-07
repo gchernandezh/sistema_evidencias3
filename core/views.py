@@ -41,6 +41,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from django.http import HttpResponse
 from datetime import datetime
 from django.core.mail import send_mail
+import requests
 
 
 TOKEN_MAX_AGE = 15 * 60  # 15 mins
@@ -1559,7 +1560,7 @@ def cambiar_estado_entrega(request):
         """, [estado, observacion, entrega_id])
 
         # 🔥 2. SI ES DEVUELTO → TRAER DATOS + CORREO
-        
+        # 🔥 BLOQUE DEVUELTO
         if estado == "DEVUELTO":
 
             cur.execute("""
@@ -1589,8 +1590,7 @@ def cambiar_estado_entrega(request):
                         }
                     ],
                     "subject": "Entregable devuelto",
-                    "textContent": f"""
-        Cordial saludo {nombre_docente},
+                    "textContent": f"""Cordial saludo {nombre_docente},
 
         Su entregable "{tipo}" ha sido devuelto.
 
@@ -1610,7 +1610,16 @@ def cambiar_estado_entrega(request):
                 }
 
                 try:
-                    requests.post(url, json=payload, headers=headers)
+                    response = requests.post(
+                        url,
+                        json=payload,
+                        headers=headers,
+                        timeout=5  # 🔥 evita que Render mate el proceso
+                    )
+
+                    # 🔥 opcional: log para ver si Brevo respondió
+                    print("Brevo status:", response.status_code)
+
                 except Exception as e:
                     print("Error enviando correo:", e)
 
