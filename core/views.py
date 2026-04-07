@@ -261,7 +261,7 @@ def docente_dashboard(request):
 
     # 1) Trae requeridos + flags (PIAR/obligatorio)
     pendientes_qs = VwPendientes.objects.raw("""
-    SELECT DISTINCT ON (p.curso_id, p.tipo_id, p.docente_id)
+    SELECT (p.curso_id, p.tipo_id, p.docente_id)
         row_number() OVER () AS id,
         p.*,
 
@@ -271,7 +271,6 @@ def docente_dashboard(request):
             WHERE e.curso_id = p.curso_id
             AND e.tipo_id = p.tipo_id
             AND e.docente_id = p.docente_id
-            AND e.observacion_revision IS NOT NULL
             ORDER BY e.created_at DESC
             LIMIT 1
         ) AS observacion_revision,
@@ -282,9 +281,12 @@ def docente_dashboard(request):
     FROM vw_pendientes p
     JOIN tipos_entregable te
         ON te.id = p.tipo_id
-    JOIN vw_entregas_requeridas_efectivas eff
-        ON eff.curso_id = p.curso_id
-        AND eff.tipo_id  = p.tipo_id
+    JOIN (
+    SELECT DISTINCT curso_id, tipo_id, obligatorio
+    FROM vw_entregas_requeridas_efectivas
+    ) eff
+    ON eff.curso_id = p.curso_id
+    AND eff.tipo_id  = p.tipo_id
     LEFT JOIN rubrica_off ro
         ON ro.curso_id = p.curso_id
         AND ro.tipo_id  = p.tipo_id
