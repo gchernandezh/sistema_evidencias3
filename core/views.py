@@ -264,27 +264,39 @@ def docente_dashboard(request):
     SELECT
         row_number() OVER () AS id,
         p.*,
+
+        (
+            SELECT e.observacion_revision
+            FROM entregas e
+            WHERE e.curso_id = p.curso_id
+            AND e.tipo_id = p.tipo_id
+            AND e.docente_id = p.docente_id
+            ORDER BY e.created_at DESC
+            LIMIT 1
+        ) AS observacion_revision,
+
         te.solo_piar AS es_piar,
         eff.obligatorio
+
     FROM vw_pendientes p
     JOIN tipos_entregable te
-         ON te.id = p.tipo_id
+        ON te.id = p.tipo_id
     JOIN vw_entregas_requeridas_efectivas eff
-         ON eff.curso_id = p.curso_id
+        ON eff.curso_id = p.curso_id
         AND eff.tipo_id  = p.tipo_id
     LEFT JOIN rubrica_off ro
-         ON ro.curso_id = p.curso_id
+        ON ro.curso_id = p.curso_id
         AND ro.tipo_id  = p.tipo_id
     LEFT JOIN entrega_cerrada ec
-         ON ec.curso_id = p.curso_id
+        ON ec.curso_id = p.curso_id
         AND ec.tipo_id  = p.tipo_id
     WHERE p.docente_id = %s
-      AND ro.id IS NULL
-      AND (
-           te.unico_por_curso IS DISTINCT FROM TRUE
-           OR ec.id IS NULL     -- si es ÚNICA y está CERRADA, no se muestra
-      )
-      AND p.semestre = (SELECT MAX(semestre) FROM reglas_entregas)  -- semestre actual
+    AND ro.id IS NULL
+    AND (
+        te.unico_por_curso IS DISTINCT FROM TRUE
+        OR ec.id IS NULL
+    )
+    AND p.semestre = (SELECT MAX(semestre) FROM reglas_entregas)
     ORDER BY p.tipo_nombre, p.fecha_limite ASC, p.curso_nombre
     """, [docente_id])
     base_filas = list(pendientes_qs)

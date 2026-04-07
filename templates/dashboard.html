@@ -159,10 +159,25 @@
                                 <td>
                                   {% if p.estado_actual == "PENDIENTE" %}
                                     <span class="badge badge-pendiente">PENDIENTE</span>
+
                                   {% elif p.estado_actual == "APROBADO" %}
                                     <span class="badge badge-aprobado">APROBADO</span>
+
                                   {% elif p.estado_actual == "DEVUELTO" %}
                                     <span class="badge badge-devuelto">DEVUELTO</span>
+
+                                    <div class="text-danger small mt-2">
+                                      Este entregable fue devuelto. Revisa las observaciones del coordinador y corrígelo desde la pestaña 
+                                      <strong>“Visualización y correcciones”</strong>.
+                                    </div>
+
+                                    {% if p.observacion_revision %}
+                                      <div class="alert alert-warning mt-2 p-2">
+                                        <strong>Observación del coordinador:</strong><br>
+                                        {{ p.observacion_revision }}
+                                      </div>
+                                    {% endif %}
+
                                   {% else %}
                                     <span class="badge text-bg-secondary">{{ p.estado_actual }}</span>
                                   {% endif %}
