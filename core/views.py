@@ -288,8 +288,7 @@ def docente_dashboard(request):
     ORDER BY p.tipo_nombre, p.fecha_limite ASC, p.curso_nombre
     """, [docente_id])
     base_filas = list(pendientes_qs)
-    # reemplazar base
-    base_filas = filas_filtradas
+
     # 🔥 TRAER OBSERVACIONES REALES
     observaciones = {}
 
