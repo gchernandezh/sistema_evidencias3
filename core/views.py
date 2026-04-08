@@ -288,20 +288,6 @@ def docente_dashboard(request):
     ORDER BY p.tipo_nombre, p.fecha_limite ASC, p.curso_nombre
     """, [docente_id])
     base_filas = list(pendientes_qs)
-    # 🔥 FILTRAR ENTREGAS YA ENVIADAS (SIN TOCAR LA BD)
-    filas_filtradas = []
-
-    for f in base_filas:
-        key = (f.curso_id, f.tipo_id)
-        
-        # si ya tiene entrega en tabla entregas
-        if key in [(e['curso_id'], e['tipo_id']) for e in entregas]:
-            # 👇 SOLO mostrar si está DEVUELTO
-            if f.estado_actual == "DEVUELTO":
-                filas_filtradas.append(f)
-        else:
-            filas_filtradas.append(f)
-
     # reemplazar base
     base_filas = filas_filtradas
     # 🔥 TRAER OBSERVACIONES REALES
