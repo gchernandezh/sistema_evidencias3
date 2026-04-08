@@ -386,7 +386,12 @@ def docente_dashboard(request):
                 None
             )
             filas_expandidas.append(f)
-
+    # 🔥 INYECTAR OBSERVACIÓN AL FINAL (SOLUCIÓN DEFINITIVA)
+    for fila in filas_expandidas:
+        fila.observacion_revision = observaciones.get(
+            (fila.curso_id, fila.tipo_id),
+            None
+        )
     # 6) Separar requeridas vs opcionales (reposiciones a opcionales; asesoría sigue en requeridas)
     def _norm(s: str) -> str:
         if not s: return ""
