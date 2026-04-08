@@ -197,12 +197,12 @@
                                     <strong>Observación de Coordinación de Área.</strong><br>
                                   </div>
 
-                                    {% if p.observacion_revision %}
-                                      <div class="alert alert-warning mt-2 p-2">
-                                        <strong>Observación del coordinador:</strong><br>
-                                        {{ p.observacion_revision }}
-                                      </div>
-                                    {% endif %}
+                                  {% if p.estado_actual == "DEVUELTO" and p.observacion_revision %}
+                                    <div class="alert alert-warning mt-2 p-2">
+                                      <strong>Observación del coordinador:</strong><br>
+                                      {{ p.observacion_revision }}
+                                    </div>
+                                  {% endif %}
 
                                   {% else %}
 
