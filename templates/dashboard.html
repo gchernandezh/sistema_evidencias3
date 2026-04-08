@@ -179,10 +179,22 @@
 
                                   {% if p.estado_actual == "DEVUELTO" %}
 
-                                    <div class="text-danger small mt-2">
-                                      Este entregable fue devuelto. Corrígelo desde la pestaña 
-                                      <strong>“Visualización y correcciones”</strong>.
-                                    </div>
+                                  <div class="text-danger small mt-2">
+                                    Este entregable fue devuelto.
+
+                                    {% if p.observacion_revision %}
+                                      <span class="text-success">
+                                        {{ p.observacion_revision }}
+                                      </span>
+                                    {% else %}
+                                      <span class="text-muted">
+                                        (Sin observación)
+                                      </span>
+                                    {% endif %}
+
+                                    Corrígelo desde la pestaña 
+                                    <strong>“Visualización y correcciones”</strong>.
+                                  </div>
 
                                     {% if p.observacion_revision %}
                                       <div class="alert alert-warning mt-2 p-2">
